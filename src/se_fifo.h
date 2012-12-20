@@ -6,7 +6,7 @@
 /**
  * Retourne un descripteur sur un tube nommé
  */
-streamd_t* _fifo_open(const char* name, int oflag, mode_t mode);
+streamd_t* _fifo_open(const char* name, int oflag, mode_t mode, size_t size);
 
 /**
  * Ferme le tube nommé

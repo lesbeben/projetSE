@@ -8,6 +8,7 @@
 #include "se_shm.h"
 #include "se_mq.h"
 #include "stream.h"
+#include "error.h"
 
 stream_t getStream(const char* streamName) {
 	const operation_t reg_op[] = {
@@ -21,10 +22,8 @@ stream_t getStream(const char* streamName) {
 			break;
 		}
 	}
-	if (op == NULL) {
-		fprintf(stderr, "Le flux %s n'existe pas\n", streamName);
-		exit(EXIT_FAILURE);
-	}
+	check_error((op == NULL), "Le flux %s n'existe pas\n", streamName);
+    
 	stream_t stream = {op, NULL};
 	return stream;
 }

@@ -7,7 +7,7 @@
  * Retourne un descripteur sur une file de messages
  * Les paramètres sont les mêmes que la fonction 'mq_open'
  */
-streamd_t* _mq_open(const char* name, int oflag, mode_t mode);
+streamd_t* _mq_open(const char* name, int oflag, mode_t mode, size_t size);
 
 /**
  *  Ferme la file de messages

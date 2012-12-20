@@ -7,7 +7,7 @@
  * Retourne un descripteur de flux sur un segment de mémoire partagé
  * Les paramètres sont les mêmes que la fonction 'shm_open'
  */
-streamd_t* _shm_open(const char* name, int oflag, mode_t mode);
+streamd_t* _shm_open(const char* name, int oflag, mode_t mode, size_t size);
 
 /**
  * Ferme le segment de mémoire partagé
