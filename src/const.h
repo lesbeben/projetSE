@@ -11,7 +11,7 @@
 #include "error.h"
 
 stream_t getStream(const char* streamName) {
-	const operation_t reg_op[] = {
+	operation_t reg_op[] = {
 		fifo_getOp(), mq_getOp(), shm_getOp()
 	};
 	
@@ -22,7 +22,9 @@ stream_t getStream(const char* streamName) {
 			break;
 		}
 	}
-	check_error((op == NULL), "Le flux %s n'existe pas\n", streamName);
+	char buffer[512];
+	sprintf(buffer, "Le flux %s n'existe pas\n", streamName);
+	check_error((op == NULL), "buffer");
     
 	stream_t stream = {op, NULL};
 	return stream;

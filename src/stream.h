@@ -38,7 +38,7 @@ typedef struct {
 /**
  * Ouvre le flux de données
  */
-void stream_open(stream_t* stream, const char* name, int oflag, mode_t mode);
+void stream_open(stream_t* stream, const char* name, int oflag, mode_t mode, size_t size);
 
 /**
  * Ferme le flux de données

@@ -12,7 +12,7 @@ streamd_t* _mq_open(const char* name, int oflag, mode_t mode, size_t size) {
 	attr.mq_msgsize = size;
 	attr.mq_maxmsg = 10;
     
-    streamd_t* sd = malloc((streamd_t) streamd_t);
+    streamd_t* sd = malloc(sizeof(streamd_t*));
     sd->sd.mq = mq_open(name, oflag, mode, &attr);
     check_error2((sd->sd.mq == -1), "mq_open");
     
@@ -23,7 +23,7 @@ int _mq_close(streamd_t* sd) {
     check_error((sd == NULL), "_mq_close : sd == NULL\n");
     mqd_t mq = sd->sd.mq;
     free(sd);
-    return mq_close(sd->sd.mq);
+    return mq_close(mq);
 }
 
 int _mq_read(streamd_t* fd, char* buffer, size_t size) {
@@ -39,7 +39,7 @@ int _mq_write(streamd_t* fd, char* buffer, size_t size) {
     check_error((buffer == NULL), "_mq_write : buffer == NULL\n");
     check_error((size <= 0),      "_mq_write : size <= 0\n"     );
     
-	return mq_write(fd->sd.mq, buffer, size, NULL);
+	return mq_send(fd->sd.mq, buffer, size, 0);
 }
 
 /*
