@@ -11,7 +11,9 @@ void stream_open(stream_t* stream, const char* name, int oflag, mode_t mode, siz
 int stream_close(stream_t* stream) {
     check_error((stream == NULL),     "stream_close : stream == NULL\n"    );
     check_error((stream->sd == NULL), "stream_close : stream->sd == NULL\n");
-	return stream->op->_close(stream->sd);
+    streamd_t* sd = stream->sd;
+    stream->sd = NULL;
+	return stream->op->_close(sd);
 }
 
 int stream_read(stream_t* stream, char* buffer, size_t size) {
@@ -28,4 +30,9 @@ int stream_write(stream_t* stream, char* buffer, size_t size) {
     check_error((buffer == NULL),     "stream_write : buffer == NULL\n"    );
     check_error((size <= 0),          "stream_write : size <= 0\n"         );
 	return stream->op->_read(stream->sd, buffer, size);
+}
+
+int stream_unlink(const char* name) {
+	check_error((name == NULL), "stream_unlink : name == NULL\n");
+	return stream->op->_unlink(name);
 }

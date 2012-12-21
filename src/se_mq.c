@@ -1,9 +1,10 @@
 #include "se_mq.h"
 #include "error.h"
 
-const char* _mq_question = "/ProjetMqQuestion";
-const char* _mq_answer = "/ProjetMqAnswer";
-
+/**
+ * Retourne un descripteur sur une file de messages
+ * Les paramètres sont les mêmes que la fonction 'mq_open'
+ */
 streamd_t* _mq_open(const char* name, int oflag, mode_t mode, size_t size) {
     check_error((name == NULL), "_mq_open : name == NULL\n");
     check_error((size <= 0),    "_mq_open : size <= 0\n"   );
@@ -13,40 +14,64 @@ streamd_t* _mq_open(const char* name, int oflag, mode_t mode, size_t size) {
 	attr.mq_maxmsg = 10;
     
     streamd_t* sd = malloc(sizeof(streamd_t*));
-    sd->sd.mq = mq_open(name, oflag, mode, &attr);
-    check_error2((sd->sd.mq == -1), "mq_open");
+    sd->data = malloc(sizeof(mqd_t*));
+    mqd_t* mq = (mqd_t*) sd->data;
+    *mq = mq_open(name, oflag, mode, &attr);
+    check_error2((*mq == -1), "mq_open");
     
 	return sd;
 }
 
+/**
+ *  Ferme la file de messages
+ */
 int _mq_close(streamd_t* sd) {
     check_error((sd == NULL), "_mq_close : sd == NULL\n");
-    mqd_t mq = sd->sd.mq;
+    int res = 0;
+    mqd_t* mq = sd->data;
+    res = mq_close(*mq);
+    free(sd->data);
     free(sd);
-    return mq_close(mq);
+    return res;
 }
 
-int _mq_read(streamd_t* fd, char* buffer, size_t size) {
-	check_error((fd == NULL),     "_mq_read : fd == NULL\n"    );
+/**
+ * Lit un maximum de size octets dans sd et les stockent dans buffer
+ * Retourne le nombre d'octets lues
+ */
+int _mq_read(streamd_t* sd, char* buffer, size_t size) {
+	check_error((sd == NULL),     "_mq_read : fd == NULL\n"    );
     check_error((buffer == NULL), "_mq_read : buffer == NULL\n");
     check_error((size <= 0),      "_mq_read : size <= 0\n"     );
     
-	return mq_receive(fd->sd.mq, buffer, size, NULL);
+	return mq_receive(sd->data, buffer, size, NULL);
 }
 
-int _mq_write(streamd_t* fd, char* buffer, size_t size) {
-	check_error((fd == NULL),     "_mq_write : fd == NULL\n"    );
+/**
+ * Ecrit size octets de buffer dans fd
+ * Retourne le nombre d'octets écrits
+ */
+int _mq_write(streamd_t* sd, char* buffer, size_t size) {
+	check_error((sd == NULL),     "_mq_write : fd == NULL\n"    );
     check_error((buffer == NULL), "_mq_write : buffer == NULL\n");
     check_error((size <= 0),      "_mq_write : size <= 0\n"     );
     
-	return mq_send(fd->sd.mq, buffer, size, 0);
+	return mq_send(sd->data, buffer, size, 0);
+}
+
+/**
+ * 
+ */
+int _mq_unlink(const char* name) {
+	check_error((name == NULL), "_mq_unlink : name == NULL\n");
+	return mq_unlink(name);
 }
 
 /*
  *
  */
 const operation_t _mq_op = {
-	_mq_open, _mq_close, _mq_read, _mq_write, "mq"
+	_mq_open, _mq_close, _mq_read, _mq_write, _mq_unlink, "mq"
 };
 
 operation_t mq_getOp() {

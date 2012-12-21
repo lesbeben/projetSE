@@ -9,10 +9,7 @@
  * 
  */
 typedef struct {
-    union {
-        int fd;
-        mqd_t mq;
-    } sd;
+    void* data;
 } streamd_t;
 
 /**
@@ -20,9 +17,10 @@ typedef struct {
  */
 typedef struct {
     streamd_t*  (*_open) (const char*, int , mode_t, size_t size);
-    int (*_close) (streamd_t* fd);
+    int (*_close) (streamd_t*);
     int (*_read) (streamd_t*, char*, size_t);
     int (*_write) (streamd_t*, char*, size_t);
+    int (*_unlink) (const char*);
     char name[4];
 } operation_t;
 
@@ -56,5 +54,10 @@ int stream_read(stream_t* stream, char* buffer, size_t size);
  * Retourne le nombre d'octets écrits
  */
 int stream_write(stream_t* stream, char* buffer, size_t size);
+
+/**
+ * Unlink le flux 'name'
+ */
+int stream_unlink(const char* name);
 
 #endif
