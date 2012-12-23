@@ -1,47 +1,52 @@
-#include "se_fifo.h"
-#include "error.h"
-#include <sys/types.h>
-#include <sys/stat.h>
+#include <stdlib.h>
+#include <stdio.h>
 #include <unistd.h>
+#include <errno.h>
+#include <string.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <sys/stat.h>
 #include <fcntl.h>
 
+#include "se_fifo.h"
+#include "error.h"
+
 /**
- * Retourne un descripteur sur un tube nommé
+ * 
  */
-streamd_t* _fifo_open(const char* name, int oflag, mode_t mode, size_t size) {
-    check_error((name == NULL), "_fifo_open : name == NULL\n");
-    check_error((size <= 0),    "_fifo_open : size <= 0\n"   );
-    
-	streamd_t* sd = malloc(sizeof(streamd_t*));
-    if (oflag & O_CREAT) {
-        check_error2(mkfifo(name, mode) == -1, "mkfifo");
-    }
-	int length = 1;
-	if (mode & O_RDONLY) {
-		length = 2;
+static int _fifo_create(streamd_t* sd, const char* name, size_t size) {
+	return mkfifo(name, S_IRUSR | S_IWUSR);
+}
+
+/**
+ * 
+ */
+static int _fifo_open(streamd_t* sd, const char* name, int oflag) {
+	int length = 2;
+	if ((oflag & O_WRONLY) == 0) {
+		length = 3;
 	}
 	sd->data = malloc(length * sizeof(int));
 	int* datalength = (int*) sd->data;
 	*datalength = length;
 	int* fd = datalength + 1;
     *fd = open(name, oflag);
-    check_error2((*fd == -1), "open");
     
-    if (mode & O_RDONLY) {
+	if (!(oflag & O_WRONLY)) {
 		int* fdout = fd + 1;
 		// On ouvre le tube nommé en écriture pour rendre la lecture bloquante
 		*fdout = open(name, O_WRONLY);
-        check_error2((*fdout == -1), "open");
+        if (*fdout == -1) {
+			return -1;
+		}
     }
-
-	return sd;
+	return *fd;
 }
 
 /**
  * Ferme le tube nommé
  */
-int _fifo_close(streamd_t * sd) {
-    check_error((sd == NULL), "_fifo_close : sd == NULL\n");
+static int _fifo_close(streamd_t * sd) {
     int res = 0;
     int* datalength = sd->data;
 	int* fd = datalength + 1;
@@ -53,51 +58,41 @@ int _fifo_close(streamd_t * sd) {
 		res = -1;
 	}
 	free(sd->data);
-    free(sd);
+	
 	return res;
 }
 
 /**
- * Lit un maximum de size octets dans fd et les stockent dans buffer
- * Retourne le nombre d'octets lues
+ * 
  */
-int _fifo_read(streamd_t* sd, char* buffer, size_t size) {
-	check_error((sd == NULL),     "_fifo_read : fd == NULL\n"    );
-    check_error((buffer == NULL), "_fifo_read : buffer == NULL\n");
-    check_error((size <= 0),      "_fifo_read : size <= 0\n"     );
-    int* datalength = sd->data;
+static int _fifo_read(streamd_t* sd, void* buffer, size_t size) {
+    int* datalength = (int*) sd->data;
 	int* fd = datalength + 1;
 	return read(*fd, buffer, size);
 }
 
 /**
- * Ecrit size octets de buffer dans fd
- * Retourne le nombre d'octets écrits
+ * 
  */
-int _fifo_write(streamd_t* sd, char* buffer, size_t size) {
-	check_error((sd == NULL),     "_fifo_write : fd == NULL\n"    );
-    check_error((buffer == NULL), "_fifo_write : buffer == NULL\n");
-    check_error((size <= 0),      "_fifo_write : size <= 0\n"     );
-    
-    int* datalength = sd->data;
+static int _fifo_write(streamd_t* sd, void* buffer, size_t size) {    
+    int* datalength = (int*) sd->data;
 	int* fd = datalength + 1;
-	
 	return write(*fd, buffer, size);
 }
 
 /**
  * 
  */
-int _fifo_unlink(const char* name) {
-	check_error((name == NULL), "_fifo_unlink : name == NULL\n");
+static int _fifo_unlink(const char* name) {
 	return unlink(name);
 }
 
 /*
  *
  */
-const operation_t _fifo_op  = {
-	_fifo_open, _fifo_close, _fifo_read, _fifo_write, _fifo_unlink, "fif"
+static const operation_t _fifo_op  = {
+	_fifo_create, _fifo_open, _fifo_close
+	, _fifo_read, _fifo_write, _fifo_unlink, "fif"
 };
 	
 operation_t fifo_getOp() {

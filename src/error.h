@@ -3,6 +3,15 @@
 
 /**
  * Si 'value' > 0
+ *   affiche 'str' sur la sortie d'erreur
+ * Renvoie
+ *   1 en cas d'ereur
+ *   0 en cas de réussite
+ */
+void check_error_noquit(int value, const char* str);
+
+/**
+ * Si 'value' > 0
  *     affiche 'str' sur la sortie d'erreur et quitte le programme
  */
 void check_error(int value, const char* str);
