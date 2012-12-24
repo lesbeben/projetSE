@@ -22,7 +22,7 @@ int stream_open(stream_t* stream, const char* name, int oflag) {
         , "stream_open : stream == NULL\n");
     error = error | check_error_noquit((name == NULL)
         , "stream_open : name == NULL\n");
-    error = error | check_error_noquit(flagcheck
+    error = error | check_error_noquit(!flagcheck
         , "stream_open : oflag invalide\n");
     if (error) {
         return -2;
@@ -78,11 +78,10 @@ int stream_write(stream_t* stream, void* buffer, size_t size) {
 }
 
 int stream_unlink(stream_t* stream, const char* name) {
-    int openflag = (stream->sd.data == NULL);
     int error = 0;
     error = error | check_error_noquit((stream == NULL)
         , "stream_unlink : stream == NULL\n");
-    error = error | check_error_noquit((buffer == NULL)
+    error = error | check_error_noquit((name == NULL)
         , "stream_unlink : name == NULL\n");
     if (error) {
         return -2;

@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -Wall -pedantic -std=c99
+CFLAGS = -Wall -pedantic -std=c99 -D_XOPEN_SOURCE=600
 LDLIBS = -lrt -lpthread
 
 all: server client

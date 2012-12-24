@@ -11,14 +11,18 @@
 #include "se_fifo.h"
 #include "error.h"
 
-/**
+/*
  * 
  */
 static int _fifo_create(streamd_t* sd, const char* name, size_t size) {
-	return mkfifo(name, S_IRUSR | S_IWUSR);
+	if (mkfifo(name, S_IRUSR | S_IWUSR) == -1) {
+		perror("mkfifo");
+		return -1;
+	}
+	return 0;
 }
 
-/**
+/*
  * 
  */
 static int _fifo_open(streamd_t* sd, const char* name, int oflag) {
@@ -31,60 +35,81 @@ static int _fifo_open(streamd_t* sd, const char* name, int oflag) {
 	*datalength = length;
 	int* fd = datalength + 1;
     *fd = open(name, oflag);
-    
+    if (*fd == -1) {
+		perror("open");
+		return -1;
+	}
 	if (!(oflag & O_WRONLY)) {
 		int* fdout = fd + 1;
 		// On ouvre le tube nommé en écriture pour rendre la lecture bloquante
 		*fdout = open(name, O_WRONLY);
         if (*fdout == -1) {
+			perror("open");
 			return -1;
 		}
     }
 	return *fd;
 }
 
-/**
- * Ferme le tube nommé
+/*
+ *
  */
 static int _fifo_close(streamd_t * sd) {
-    int res = 0;
     int* datalength = sd->data;
 	int* fd = datalength + 1;
 	if (*datalength == 2) {
 		int* fdout = fd + 1;
-		res = close(*fdout);
+		if (close(*fdout) == -1) {
+			perror("close");
+			return -1;
+		}
 	}
 	if (close(*fd) == -1) {
-		res = -1;
+		perror("close");
+		return -1;
 	}
 	free(sd->data);
 	
-	return res;
+	return 0;
 }
 
-/**
+/*
  * 
  */
 static int _fifo_read(streamd_t* sd, void* buffer, size_t size) {
     int* datalength = (int*) sd->data;
 	int* fd = datalength + 1;
-	return read(*fd, buffer, size);
+	int n = read(*fd, buffer, size);
+	if (n < 0) {
+		perror("read");
+		return -1;
+	}
+	return n;
 }
 
-/**
+/*
  * 
  */
 static int _fifo_write(streamd_t* sd, void* buffer, size_t size) {    
     int* datalength = (int*) sd->data;
 	int* fd = datalength + 1;
-	return write(*fd, buffer, size);
+	int n = write(*fd, buffer, size);
+	if (n < 0) {
+		perror("write");
+		return -1;
+	}
+	return n;
 }
 
-/**
+/*
  * 
  */
 static int _fifo_unlink(const char* name) {
-	return unlink(name);
+	if (unlink(name) == -1) {
+		perror("unlink");
+		return -1;
+	}
+	return 0;
 }
 
 /*

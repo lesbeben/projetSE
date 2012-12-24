@@ -8,7 +8,7 @@
  *   1 en cas d'ereur
  *   0 en cas de réussite
  */
-void check_error_noquit(int value, const char* str);
+int check_error_noquit(int value, const char* str);
 
 /**
  * Si 'value' > 0

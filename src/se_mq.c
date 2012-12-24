@@ -1,78 +1,107 @@
-#include "se_mq.h"
-#include "error.h"
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include <string.h>
+#include "se_mq.h"
+#include "error.h"
 
-/**
+/*
  * 
  */
-int _mq_create(streamd_t* sd, const char* name, size_t size) {
+static int _mq_create(streamd_t* sd, const char* name, size_t size) {
+	int realnamelength = strlen(name) + 2;
+	char realname[realnamelength];
+    sprintf(realname, "/%s", name);
+    
     struct mq_attr attr;
 	attr.mq_msgsize = size;
 	attr.mq_maxmsg = 10; 
     
     sd->data = malloc(sizeof(mqd_t*));
     mqd_t* mq = (mqd_t*) sd->data;
-    char* realname = malloc(strlen(name) + 2);
-    sprintf(realname, "/%s", name);
     *mq = mq_open(realname, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR, &attr);
-    free(realname);
+    if (*mq == -1) {
+		perror("mq_open");
+		return -1;
+	}
+
 	return *mq;
 }
 
-/**
+/*
  * 
  */
-int _mq_open(streamd_t* sd, const char* name, int oflag) {
+static int _mq_open(streamd_t* sd, const char* name, int oflag) {
     if (sd->data == NULL) {
-		char* realname = malloc(strlen(name) + 2);
+		int realnamelength = strlen(name) + 2;
+		char realname[realnamelength];
 		sprintf(realname, "/%s", name);
 		sd->data = malloc(sizeof(mqd_t*));
 		mqd_t* mq = (mqd_t*) sd->data;
 		*mq = mq_open(realname, oflag);
-		free(realname);
-
+		if (*mq == -1) {
+			perror("mq_open");
+			return -1;
+		}
 		return *mq;
 	}
     
 	return 0;
 }
 
-/**
+/*
  * 
  */
-int _mq_close(streamd_t* sd) {
-    int res = 0;
+static int _mq_close(streamd_t* sd) {
     mqd_t* mq = sd->data;
-    res = mq_close(*mq);
+    if (mq_close(*mq) == -1) {
+		perror("mq_close");
+		return -1;
+	}
     free(sd->data);
-    return res;
+    return 0;
 }
 
-/**
+/*
  * 
  */
-int _mq_read(streamd_t* sd, void* buffer, size_t size) {
+static int _mq_read(streamd_t* sd, void* buffer, size_t size) {
     mqd_t* mq = (mqd_t*) sd->data;
-	return mq_receive(*mq, buffer, size, NULL);
+    int n = mq_receive(*mq, buffer, size, NULL);
+    if (n == -1) {
+		perror("mq_receive");
+		return -1;
+	}
+	return n;
 }
 
-/**
+/*
  * 
  */
-int _mq_write(streamd_t* sd, void* buffer, size_t size) {
+static int _mq_write(streamd_t* sd, void* buffer, size_t size) {
     mqd_t* mq = sd->data;
-	return mq_send(*mq, buffer, size, 0);
+	int n = mq_send(*mq, buffer, size, 0);
+    if (n == -1) {
+		perror("mq_send");
+		return -1;
+	}
+	return n;
 }
 
-/**
+/*
  * 
  */
-int _mq_unlink(const char* name) {
-	return mq_unlink(name);
+static int _mq_unlink(const char* name) {
+	int realnamelength = strlen(name) + 2;
+	char realname[realnamelength];
+    sprintf(realname, "/%s", name);
+    
+    if (mq_unlink(realname) == -1) {
+		perror("mq_unlink");
+		return -1;
+	}
+	return 0;
 }
 
 /*
