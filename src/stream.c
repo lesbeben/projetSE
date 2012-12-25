@@ -1,5 +1,6 @@
 #include "stream.h"
 #include "error.h"
+#include "stream_manager.h"
 
 int stream_create(stream_t* stream, const char* name, size_t size) {
     int error = 0;
@@ -12,6 +13,7 @@ int stream_create(stream_t* stream, const char* name, size_t size) {
     if (error){
 		return -2;
 	}
+	manager_addstream(stream, name);
     return stream->op._create(&stream->sd, name, size);
 }
 
@@ -86,5 +88,6 @@ int stream_unlink(stream_t* stream, const char* name) {
     if (error) {
         return -2;
     }
+    manager_removestream(stream);
 	return stream->op._unlink(name);
 }
