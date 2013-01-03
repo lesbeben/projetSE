@@ -4,14 +4,25 @@
 #include "se_shm.h"
 #include "se_mq.h"
 
-typedef struct STREAM_LISTE {
-	char* stream_name;
+/*
+ * Structure de liste de flux contenant : 
+ *   - stream : le flux à gérer
+ *   - stream_name : le nom du flux 
+ *   - ownerpid : le pid du processus responsable de la durée 
+ *                  de vie du flux
+ *   - next : élément suivant de la liste
+ */
+typedef struct STREAM_LIST {
 	stream_t* stream;
+	char* stream_name;
 	pid_t ownerpid;
-	struct STREAM_LISTE* next;
-} *stream_liste_t;
+	struct STREAM_LIST* next;
+} *stream_list_t;
 
-stream_liste_t stream_liste = NULL;
+/*
+ * La liste des flux à gérer
+ */
+stream_list_t stream_list = NULL;
 
 stream_t manager_getstream(const char* streamName) {
 	operation_t reg_op[] = {
@@ -37,19 +48,19 @@ stream_t manager_getstream(const char* streamName) {
 }
 
 void manager_addstream(stream_t* stream, const char* name) {
-	stream_liste_t element = malloc(sizeof(struct STREAM_LISTE));
+	stream_list_t element = malloc(sizeof(struct STREAM_LIST));
 	element->stream_name = malloc(strlen(name) + 1);
 	strcpy(element->stream_name, name);
 	element->stream = stream;
 	element->ownerpid = getpid();
-	element->next = stream_liste;
-	stream_liste = element;
+	element->next = stream_list;
+	stream_list = element;
 }
 
 void manager_removestream(stream_t* stream) {
-	stream_liste_t prev = NULL;
-	stream_liste_t element = NULL;
-	stream_liste_t next = stream_liste;
+	stream_list_t prev = NULL;
+	stream_list_t element = NULL;
+	stream_list_t next = stream_list;
 	while (next != NULL) {
 		if (element != NULL) {
 			prev = element;
@@ -62,7 +73,7 @@ void manager_removestream(stream_t* stream) {
 	}
 	if (next != NULL) {
 		if (prev == NULL) {
-			stream_liste = next;
+			stream_list = next;
 		} else {
 			prev->next = next;
 		}
@@ -71,8 +82,8 @@ void manager_removestream(stream_t* stream) {
 }
 
 void manager_clean() {
-	stream_liste_t element = NULL;
-	stream_liste_t next = stream_liste;
+	stream_list_t element = NULL;
+	stream_list_t next = stream_list;
 	pid_t pid = getpid();
 	while (next != NULL) {
 		element = next;
@@ -83,7 +94,7 @@ void manager_clean() {
 			manager_removestream(element->stream);
 		}
 	}
-	stream_liste = NULL;
+	stream_list = NULL;
 }
 
 

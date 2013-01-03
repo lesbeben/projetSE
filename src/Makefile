@@ -8,11 +8,12 @@ se_fifo.o : se_fifo.c se_fifo.h stream.h error.h
 se_shm.o : se_shm.c se_shm.h stream.h error.h
 se_mq.o : se_mq.c se_mq.h stream.h error.h
 stream.o : stream.c stream.h error.h
-stream_manager.o : stream_manager.c stream_manager.h
+stream_manager.o : stream_manager.c stream_manager.h error.h
+stream_set.o : stream_set.c stream_set.h stream.h
 error.o : error.c error.h
 server.o: server.c 
-server : server.o se_mq.o se_fifo.o se_shm.o stream.o error.o stream_manager.o
-client : client.o se_mq.o se_fifo.o se_shm.o stream.o error.o stream_manager.o
+server : server.o se_mq.o se_fifo.o se_shm.o stream.o stream_manager.o stream_set.o error.o 
+client : client.o se_mq.o se_fifo.o se_shm.o stream.o stream_manager.o stream_set.o error.o 
 
 clean :
 	rm -f *.o server client

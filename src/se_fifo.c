@@ -34,6 +34,20 @@ static int _fifo_open(streamd_t* sd, const char* name, int oflag) {
 	int* datalength = (int*) sd->data;
 	*datalength = length;
 	int* fd = datalength + 1;
+	if (!(oflag & O_WRONLY)) {
+		switch(fork()) {
+			case -1 :
+				return -1;
+			case 0 : 
+				if (open(name, O_WRONLY) == -1) {
+					perror("open");
+				}
+				exit(EXIT_SUCCESS);
+			default:
+			    break;
+		}
+	}
+
     *fd = open(name, oflag);
     if (*fd == -1) {
 		perror("open");
@@ -69,6 +83,7 @@ static int _fifo_close(streamd_t * sd) {
 		return -1;
 	}
 	free(sd->data);
+	sd->data = NULL;
 	
 	return 0;
 }
@@ -104,6 +119,17 @@ static int _fifo_write(streamd_t* sd, void* buffer, size_t size) {
 /*
  * 
  */
+static int _fifo_getfd(streamd_t* sd) {
+	if (sd->data == NULL) {
+		fprintf(stderr, "_fifo_getfd : Le flux n'est pas ouvert\n");
+		return -2;
+	}
+	return *(((int*) sd->data) + 1);
+}
+
+/*
+ * 
+ */
 static int _fifo_unlink(const char* name) {
 	if (unlink(name) == -1) {
 		perror("unlink");
@@ -116,8 +142,8 @@ static int _fifo_unlink(const char* name) {
  *
  */
 static const operation_t _fifo_op  = {
-	_fifo_create, _fifo_open, _fifo_close
-	, _fifo_read, _fifo_write, _fifo_unlink, "fif"
+	_fifo_create, _fifo_open, _fifo_close, _fifo_read
+	, _fifo_write, _fifo_getfd, _fifo_unlink, "fif"
 };
 	
 operation_t fifo_getOp() {

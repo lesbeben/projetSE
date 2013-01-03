@@ -8,6 +8,9 @@
 #include <fcntl.h>
 #include <string.h>
 #include <semaphore.h>
+#include <sys/eventfd.h>
+#include <errno.h>
+#include <signal.h>
 #include "se_shm.h"
 #include "error.h"
 
@@ -18,6 +21,8 @@ typedef struct {
 
 typedef struct {
 	int shm;
+	int eventFD;
+	pid_t eventPID;
 	shm_t* shmdata;
 	sem_t* read;
 	sem_t* write;
@@ -52,9 +57,7 @@ static int _shm_create(streamd_t* sd, const char* name, size_t size) {
     /*
      * Notre segment de mémoire partagé contiendra 
      *   La taille maximale des données à écrire
-     *   Une semaphore si l'on peut accéder aux données
      *   Un entier pour la lecture des données
-     *   Un entier pour l'écriture des données
      *   size octets pour recevoir les données
      */
     size_t shmsize = _shm_size(size);
@@ -142,7 +145,7 @@ static int _shm_open(streamd_t* sd, const char* name, int oflag) {
 		perror("mmap");
 		return -1;
 	}
-	data->shm = shm;
+	data->shm = shm;	
 	data->shmdata = (shm_t*) p;
 	data->read = sem_open(readSemName, O_RDWR);
 	if (data->read == NULL) {
@@ -153,6 +156,42 @@ static int _shm_open(streamd_t* sd, const char* name, int oflag) {
 	if (data->write == NULL) {
 		perror("sem_open");
 		return -1;
+	}
+	if ((oflag & O_WRONLY) == 0) {
+		data->eventFD = eventfd(0, EFD_NONBLOCK);
+		if (data->eventFD == -1) {
+			perror("eventfd");
+			return -1;
+		}
+		int pid = fork();
+		if (pid == 0) {
+			uint64_t i = 1;
+			while (1) {
+				if (sem_wait(data->read) == -1) {
+					perror("sem_wait");
+					return -1;
+				}
+				if (write(data->eventFD, &i, sizeof(i)) == -1) {
+					if (errno != EAGAIN) {
+						perror("write");
+					} else {
+						errno = 0;
+					}
+				}
+				if (sem_post(data->read) == -1) {
+					perror("sem_post");
+					return -1;
+				}
+			}
+			exit(EXIT_SUCCESS);
+		} else if (pid == -1) {
+			perror("fork");
+			return -1;
+		}
+		data->eventPID = pid;
+	} else {
+		data->eventFD = -1;
+		data->eventPID = -1;
 	}
 	return shm;
 }
@@ -180,6 +219,17 @@ static int _shm_close(streamd_t* sd) {
 		perror("close");
 		return -1;
 	}
+	if (data->eventFD != -1) {
+		if (kill(data->eventPID, SIGTERM) == -1) {
+			perror("kill");
+			return -1;
+		}
+		if (close(data->eventFD) == -1) {
+			perror("close");
+			return -1;
+		}
+	}
+
 	free(sd->data);
 	return 0;
 }
@@ -190,12 +240,25 @@ static int _shm_close(streamd_t* sd) {
 static int _shm_read(streamd_t* sd, void* buffer, size_t size) {
 	data_t* data = (data_t*) sd->data;
 	shm_t* s = data->shmdata;
-	int read = 0;
+	int count = 0;
+	uint64_t i;
 	
 	if (sem_wait(data->read) == -1) {
 		perror("sem_wait");
 		return -1;
 	}
+	if (data->eventFD != -1) {
+		int olderr = errno;
+		if (read(data->eventFD, &i, sizeof(i)) == -1) {
+			if (errno != EAGAIN) {
+				perror("read");
+				return -1;			
+			} else {
+				errno = olderr;
+			}
+		}
+	}
+
 	if (s->sizeToRead > 0) {
 		if (size < s->sizeToRead) {
 			fprintf(stderr, "La taille du buffer n'est pas assez grande\n");
@@ -205,14 +268,14 @@ static int _shm_read(streamd_t* sd, void* buffer, size_t size) {
 			perror("memcpy");
 			return -1;
 		}
-		read = s->sizeToRead;
+		count = s->sizeToRead;
 		s->sizeToRead = 0;
 	}
 	if (sem_post(data->write) == -1) {
 		perror("sem_post");
 		return -1;
 	}
-	return read;
+	return count;
 }
 
 /*
@@ -247,6 +310,18 @@ static int _shm_write(streamd_t* sd, void* buffer, size_t size) {
 }
 
 /*
+ * 
+ */
+static int _shm_getfd(streamd_t* sd) {
+	if (sd->data == NULL) {
+		fprintf(stderr, "_shm_getfd : Le flux n'est pas ouvert\n");
+		return -2;
+	}
+	data_t* d = (data_t*) sd->data;
+	return d->eventFD;
+}
+
+/*
  *
  */
 static int _shm_unlink(const char* name) {
@@ -278,7 +353,7 @@ static int _shm_unlink(const char* name) {
  */
 const operation_t _shm_op = {
 	_shm_create, _shm_open, _shm_close
-	, _shm_read, _shm_write, _shm_unlink, "shm"
+	, _shm_read, _shm_write, _shm_getfd, _shm_unlink, "shm"
 };
 
 operation_t shm_getOp() {

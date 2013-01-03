@@ -60,6 +60,8 @@ static int _mq_close(streamd_t* sd) {
 		return -1;
 	}
     free(sd->data);
+    sd->data = NULL;
+    
     return 0;
 }
 
@@ -92,6 +94,17 @@ static int _mq_write(streamd_t* sd, void* buffer, size_t size) {
 /*
  * 
  */
+static int _mq_getfd(streamd_t* sd) {
+	if (sd->data == NULL) {
+		fprintf(stderr, "_mq_getfd : Le flux n'est pas ouvert\n");
+		return -2;
+	}
+	return *((int*) sd->data);
+}
+
+/*
+ * 
+ */
 static int _mq_unlink(const char* name) {
 	int realnamelength = strlen(name) + 2;
 	char realname[realnamelength];
@@ -109,7 +122,7 @@ static int _mq_unlink(const char* name) {
  */
 const operation_t _mq_op = {
 	_mq_create,_mq_open, _mq_close
-	, _mq_read, _mq_write, _mq_unlink, "mq"
+	, _mq_read, _mq_write, _mq_getfd, _mq_unlink, "mq"
 };
 
 operation_t mq_getOp() {

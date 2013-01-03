@@ -21,6 +21,7 @@ typedef struct {
     int (*_close) (streamd_t*);
     int (*_read) (streamd_t*, void*, size_t);
     int (*_write) (streamd_t*, void*, size_t);
+    int (*_getfd) (streamd_t*);
     int (*_unlink) (const char*);
     char name[4];
 } operation_t;
