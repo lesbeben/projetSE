@@ -14,11 +14,22 @@
 #include "se_shm.h"
 #include "error.h"
 
+/*
+ * La structure interne du segment de mémoire partagée
+ * Notre segment de mémoire partagé contiendra 
+ *   La taille maximale des données à écrire
+ *   Un entier pour le nombre d'octets à lire
+ *   Des données
+ */
 typedef struct {
 	int maxSize;
 	int sizeToRead;
+	char data[0];
 } shm_t;
 
+/*
+ * La structure d'un descripteur des données de flux
+ */
 typedef struct {
 	int shm;
 	int eventFD;
@@ -27,6 +38,31 @@ typedef struct {
 	sem_t* read;
 	sem_t* write;
 } data_t;
+
+
+
+/*
+ * Fonction qui permet d'enregister le gestionnaire auprès des signaux
+ *   de terminaisons du processus de traitement des 
+ *   notifications de données sur le flux
+ */
+static void setChildSignals() {
+    struct sigaction action;
+    action.sa_handler = SIG_DFL;
+    action.sa_flags = 0;
+    if (sigfillset(&action.sa_mask) == -1) {
+        perror("sigfilltset");
+        exit(EXIT_FAILURE);
+    }
+    
+    int signals[] = {SIGINT, SIGTERM};
+    for (int i = 0; i < 2; i++) {
+        if (sigaction(signals[i], &action, NULL) == -1) {
+            perror("sigaction");
+            exit(EXIT_FAILURE);
+        }
+    }
+}
 
 /*
  * Renvoie la taille d'un segment de mémoire partagé à partir de la taille 
@@ -54,12 +90,7 @@ static int _shm_create(streamd_t* sd, const char* name, size_t size) {
 		perror("shm_open");
 		return -1;
 	}
-    /*
-     * Notre segment de mémoire partagé contiendra 
-     *   La taille maximale des données à écrire
-     *   Un entier pour la lecture des données
-     *   size octets pour recevoir les données
-     */
+	
     size_t shmsize = _shm_size(size);
     if (ftruncate(shm, shmsize) == -1) {
 		perror("ftruncate");
@@ -145,7 +176,7 @@ static int _shm_open(streamd_t* sd, const char* name, int oflag) {
 		perror("mmap");
 		return -1;
 	}
-	data->shm = shm;	
+	data->shm = shm;
 	data->shmdata = (shm_t*) p;
 	data->read = sem_open(readSemName, O_RDWR);
 	if (data->read == NULL) {
@@ -165,6 +196,7 @@ static int _shm_open(streamd_t* sd, const char* name, int oflag) {
 		}
 		int pid = fork();
 		if (pid == 0) {
+			setChildSignals();
 			uint64_t i = 1;
 			while (1) {
 				if (sem_wait(data->read) == -1) {
@@ -264,7 +296,7 @@ static int _shm_read(streamd_t* sd, void* buffer, size_t size) {
 			fprintf(stderr, "La taille du buffer n'est pas assez grande\n");
 			return -2;
 		}
-		if (memcpy(buffer, s + 1, s->sizeToRead) == NULL) {
+		if (memcpy(buffer, s->data, s->sizeToRead) == NULL) {
 			perror("memcpy");
 			return -1;
 		}
@@ -295,7 +327,7 @@ static int _shm_write(streamd_t* sd, void* buffer, size_t size) {
 		return -1;
 	}
 	if (s->sizeToRead == 0) {
-		if (memcpy(s + 1, buffer, size) == NULL) {
+		if (memcpy(s->data, buffer, size) == NULL) {
 			perror("memcpy");
 			return -1;
 		}

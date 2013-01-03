@@ -40,7 +40,8 @@ static int _fifo_open(streamd_t* sd, const char* name, int oflag) {
 				return -1;
 			case 0 : 
 				if (open(name, O_WRONLY) == -1) {
-					perror("open");
+					fprintf(stderr, "%s\n", name);
+					perror("open1");
 				}
 				exit(EXIT_SUCCESS);
 			default:
@@ -54,10 +55,12 @@ static int _fifo_open(streamd_t* sd, const char* name, int oflag) {
 		return -1;
 	}
 	if (!(oflag & O_WRONLY)) {
+		wait(NULL);
 		int* fdout = fd + 1;
 		// On ouvre le tube nommé en écriture pour rendre la lecture bloquante
 		*fdout = open(name, O_WRONLY);
         if (*fdout == -1) {
+			fprintf(stderr, "%s\n", name);
 			perror("open");
 			return -1;
 		}
@@ -71,7 +74,7 @@ static int _fifo_open(streamd_t* sd, const char* name, int oflag) {
 static int _fifo_close(streamd_t * sd) {
     int* datalength = sd->data;
 	int* fd = datalength + 1;
-	if (*datalength == 2) {
+	if (*datalength == 3) {
 		int* fdout = fd + 1;
 		if (close(*fdout) == -1) {
 			perror("close");
@@ -105,7 +108,7 @@ static int _fifo_read(streamd_t* sd, void* buffer, size_t size) {
 /*
  * 
  */
-static int _fifo_write(streamd_t* sd, void* buffer, size_t size) {    
+static int _fifo_write(streamd_t* sd, void* buffer, size_t size) {
     int* datalength = (int*) sd->data;
 	int* fd = datalength + 1;
 	int n = write(*fd, buffer, size);
