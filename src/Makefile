@@ -10,10 +10,13 @@ se_mq.o : se_mq.c se_mq.h stream.h error.h
 stream.o : stream.c stream.h error.h
 stream_manager.o : stream_manager.c stream_manager.h error.h
 stream_set.o : stream_set.c stream_set.h stream.h
+request.o : request.c request.h
 error.o : error.c error.h
 server.o: server.c 
-server : server.o se_mq.o se_fifo.o se_shm.o stream.o stream_manager.o stream_set.o error.o 
-client : client.o se_mq.o se_fifo.o se_shm.o stream.o stream_manager.o stream_set.o error.o 
+server : server.o se_mq.o se_fifo.o se_shm.o stream.o stream_manager.o \
+		stream_set.o error.o request.o
+client : client.o se_mq.o se_fifo.o se_shm.o stream.o stream_manager.o \
+		stream_set.o error.o request.o
 
 clean :
 	rm -f *.o server client

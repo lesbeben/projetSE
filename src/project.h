@@ -19,20 +19,4 @@ const char* request_name = "request_stream";
  */
 const char* answer_prefix = "answer_stream";
 
-typedef enum {
-    UID,
-    GID,
-    PID
-} request_type;
-
-typedef struct {
-	union {
-		uid_t uid;
-		gid_t gid;
-        pid_t pid;
-	} data;
-	request_type type;
-	int clientpid;
-} request_t;
-
 #endif
