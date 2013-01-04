@@ -1,6 +1,10 @@
 #ifndef REQUEST_H
 #define REQUEST_H
 
+#include <stdlib.h>
+#include <stdio.h>
+#include <unistd.h>
+
 /**
  * Structure représentant une requete
  * la requete contiendra : 
