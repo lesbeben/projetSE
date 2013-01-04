@@ -1,0 +1,11 @@
+pid
+gid
+uid
+exit
+
+
+
+set fif
+set -i fif
+set -o fif
+help
