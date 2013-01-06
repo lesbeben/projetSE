@@ -41,6 +41,7 @@ void process_request(request_t *req) {
 //procedure de gestion des signaux
 void signal_handler(int signum){ // a modifier
 	printf("recu signal: %d", signum);
+	manager_clean();
 	exit(EXIT_SUCCESS);
 }
 
@@ -55,6 +56,10 @@ int main(int argc, char **argv) {
 	struct sigaction action;
 	action.sa_handler = signal_handler;
 	action.sa_flags = 0;
+	if (sigfillset(&action.sa_mask) == -1) {
+		perror("sigfillset");
+		raise(SIGTERM);
+	}
 	
 	//on cree en dur les types de stream
 	stream_t req_str[3]//faire des constantes de type TUBE SHM MQ
