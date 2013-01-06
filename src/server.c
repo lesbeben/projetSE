@@ -4,36 +4,61 @@
 #include "stream_manager.h"
 #include "project.h" //verifier les includes
 
-//tester les appels de stream_*?  oui!!
 
 void help(){
 	printf("./server \n"); // a changer
 }
 
-void quit(){
-	//peut etre factoriser ici l'envoie de signaux
-}
 
+//procedure de reponse
 void process_request(request_t *req) {
     char ans_name[STRSIZ];
-    sprintf(ans_name, "%s%i", answer_prefix, req.clientpid);
-    stream_t req_str = manager_getstream();//a completer avec le type de la req
-    stream_open(&req_str, ans_name, )
-    //envoyer
-    //fermer
+    char buf[BUFSIZ];
+    //on calcule le nom de flux de reponse
+    sprintf(ans_name, "%s%i", answer_prefix, req->clientpid);
+    //on ouvre le flux de reponse
+    stream_t ans_str = manager_getstream(req->answer_stream);
+    if (stream_open(&ans_str, ans_name, O_WRONLY) < 0) { 
+			//ajouter gestion des cas -1 -2
+			raise(SIGTERM);
+		}
+	//on met la reponse dans le buffer
+	getanswer(req, &buf, BUFSIZ -1); // ou un switch sur les cmdname?
+	//on envoie la reponse
+	if (stream_write(&ans_str, &buf, BUFSIZE) < 0) {
+		raise(SIGTERM);
+		//plantage
+	}							
+    //on ferme le  flux de reponse
+    if (stream_close(&ans_str) < 0) {
+		//ajouter gestion des cas -1 -2
+		raise(SIGTERM);
+	}
+    
 
+}
+
+//procedure de gestion des signaux
+void signal_handler(int signum){ // a modifier
+	printf("recu signal: %d", signum);
+	exit(EXIT_SUCCESS);
 }
 
 int main(int argc, char **argv) {
 
-	if (argc != 2){ // ou pas
-		help();
-		exit(EXIT_FAILURE);
-	}
-	//sigaction a initialiser
+	//if (argc != 2){ // ou pas
+		//help();
+		//exit(EXIT_FAILURE);
+	//}
+	
+	//on initialise sigaction
+	struct sigaction action;
+	action.sa_handler = signal_handler;
+	action.sa_flags = 0;
+	
+	//on cree en dur les types de stream
 	stream_t req_str[3]//faire des constantes de type TUBE SHM MQ
 	stream_set_t sset;
-	//on cree en dur les types de stream
 	req_str[0] = manager_getstream('fif');
 	req_str[1] = manager_getstream('mq');
 	req_str[2] = manager_getstream('shm');
@@ -130,15 +155,14 @@ int main(int argc, char **argv) {
 	}
 	//on close et on unlink tous les flux
 	for (int i = 0; i < 3; ++i) {
-			if (stream_close(req_str[i]) < 0) {
+		if (stream_close(&req_str[i]) < 0) {
 			//ajouter gestion des cas -1 -2
 			raise(SIGTERM);
 		}
-		if (stream_unlink(req_str[i]) < 0) { 
+		if (stream_unlink(&req_str[i]) < 0) { 
 			//ajouter gestion des cas -1 -2
 			raise(SIGTERM);
 		}
-		}
-	
+	}
 }
 

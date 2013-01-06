@@ -29,21 +29,23 @@
 
 
 
-int main(int argc, char ***********************************argv) {
+int main(int argc, char **argv) {
 	request_t *req = NULL;
 	char ans_buf[BUFSIZ];
-	//sigaction
 	char cmd_buf[BUFSIZ];
+	//sigaction a creer
 	
 	int res= 0
 	while (res != -233) //code exit
-		//scanf	
-		//res = get request(req)
-		//create
-		//open 
-		//send
-		//delete request
-	//close
-	//unlink
+		//on lit la commande sur l'entree standard
+		scanf("%s\n", &cmd_buf);
+		//on cree la requete
+		req = create_request(cmdbuf);
+		//on envoie la question
+		res = getanswer(req, &buf, BUFSIZ -1);
+		//on efface la requete
+		delete_request(req);
+	//close ???
+	//unlink???
 	return EXIT_SUCCESS;
 }
