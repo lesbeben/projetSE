@@ -1,24 +1,30 @@
-CC = gcc
-CFLAGS = -Wall -pedantic -std=c99 -D_XOPEN_SOURCE=600
-LDLIBS = -lrt -lpthread
+include ../Makefile.inc
 
-all: server client
+SERVER = server
+CLIENT = client
+OBJFILES = stream.o stream_manager.o stream_set.o error.o request.o  \
+		client_command.o server_command.o
 
-se_fifo.o : se_fifo.c se_fifo.h stream.h error.h
-se_shm.o : se_shm.c se_shm.h stream.h error.h
-se_mq.o : se_mq.c se_mq.h stream.h error.h
-stream.o : stream.c stream.h error.h
-stream_manager.o : stream_manager.c stream_manager.h error.h
-stream_set.o : stream_set.c stream_set.h stream.h
-request.o : request.c request.h
-client_command.o : client_command.c client_command.h
-server_command.o : server_command.c server_command.h
-error.o : error.c error.h
-server.o: server.c 
-server : server.o se_mq.o se_fifo.o se_shm.o stream.o stream_manager.o \
-		stream_set.o error.o request.o client_command.o server_command.o
-client : client.o se_mq.o se_fifo.o se_shm.o stream.o stream_manager.o \
-		stream_set.o error.o request.o client_command.o server_command.o
+all: $(SERVER) $(CLIENT)
+
+%.o: %.c
+	$(CC) $(CFLAGS) $(LDLIBS) -o $@ -c $<
+
+$(SERVER) : server.o $(OBJFILES)
+	$(CC) $(CFLAGS) $(LDLIBS) -o $(SERVER) server.o $(OBJFILES)
+
+$(CLIENT) : client.o $(OBJFILES)
+	$(CC) $(CFLAGS) $(LDLIBS) -o $(CLIENT) client.o $(OBJFILES)
+		
+install :
+	mkdir -p ../bin/
+	cp $(CLIENT) ../bin/$(CLIENT)
+	cp $(SERVER) ../bin/$(SERVER)
+    
+uninstall :
+	rm -f ../bin/$(CLIENT)
+	rm -f ../bin/$(SERVER)
+	rmdir --ignore-fail-on-non-empty ../bin/
 
 clean :
-	rm -f *.o server client
+	rm -f *.o $(SERVER) $(CLIENT)

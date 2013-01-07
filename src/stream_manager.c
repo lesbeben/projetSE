@@ -1,8 +1,11 @@
 #include <unistd.h>
+#include <sys/types.h>
+#include <dirent.h>
+#include <signal.h>
+#include <errno.h>
+#include <dlfcn.h>
+
 #include "stream_manager.h"
-#include "se_fifo.h"
-#include "se_shm.h"
-#include "se_mq.h"
 
 /*
  * Structure de liste de flux contenant : 
@@ -24,22 +27,79 @@ typedef struct STREAM_LIST {
  */
 stream_list_t stream_list = NULL;
 
-stream_t manager_getstream(const char* streamName) {
-	operation_t reg_op[] = {
-		fifo_getOp(), mq_getOp(), shm_getOp()
-	};
-
+/*
+ * Structure des listes de bibliotheques dynamique chargées.
+ *   -
+ */
+typedef struct DL_LIST {
 	operation_t op;
-	unsigned int i = 0;
-	for (i = 0; i < sizeof(reg_op); i++) {
-		if (strcmp(streamName, reg_op[i].name) == 0) {
-			op = reg_op[i];
+	void* handler;
+	struct DL_LIST* next;
+} *dl_list_t;
+
+/*
+ * La liste des bibliotheques chargées.
+ */
+dl_list_t dl_list = NULL;
+
+void manager_init() {
+	const char* dirname= "plugin/";
+	DIR* dir = opendir(dirname);
+	if (dir == NULL) {
+		perror("opendir");
+		raise(SIGTERM);
+	}
+	char name[256 + 7];
+	dl_list_t element = NULL;
+	
+	struct dirent* ent = readdir(dir);
+	while (ent != NULL) {
+		if (ent->d_name[0] != '.') {
+			sprintf(name, "%s%s", dirname, ent->d_name);
+			void *hndl = dlopen(name, RTLD_LAZY);
+			if(hndl == NULL) {
+				fprintf(stderr, "Impossible d'ouvrir %s : %s\n", name, dlerror());
+				ent = readdir(dir);
+				continue;
+			}
+			operation_t (*func)();
+			func = dlsym(hndl, "getop");
+			if (func == NULL) {
+				fprintf(stderr, "%s n'est pas un type de connection valide : %s\n", name, dlerror()); 
+				dlclose(hndl);
+				ent = readdir(dir);
+				continue;
+			}
+			operation_t op = func();
+			element = malloc(sizeof(struct DL_LIST));
+			element->op = op;
+			element->handler = hndl;
+			element->next = dl_list;
+			dl_list = element;
+		}
+		ent = readdir(dir);
+	}
+	if (errno != 0) {
+		perror("readdir");
+	}
+	if (closedir(dir) == -1) {
+		perror("closedir");
+	}
+}
+
+stream_t manager_getstream(const char* streamName) {
+	dl_list_t elmnt = dl_list;
+	operation_t op;
+	while (elmnt != NULL) {
+		if (strcmp(streamName, elmnt->op.name) == 0) {
+			op = elmnt->op;
 			break;
 		}
+		elmnt = elmnt->next;
 	}
 	char buffer[512];
 	sprintf(buffer, "Le flux %s n'existe pas\n", streamName);
-	check_error(i == sizeof(reg_op), buffer);
+	check_error(elmnt == NULL, buffer);
 
 	stream_t stream;
 	stream.op = op;
@@ -97,5 +157,16 @@ void manager_clean() {
 	stream_list = NULL;
 }
 
-
+void manager_close() {
+	dl_list_t elmnt = dl_list;
+	while (elmnt != NULL) {
+		if (dlclose(elmnt->handler) == -1) {
+			fprintf(stderr, "dlclose : %s\n", dlerror()); 
+			raise(SIGTERM);
+		}
+		dl_list_t next = elmnt->next;
+		free(elmnt);
+		elmnt = next;
+	}
+}
 

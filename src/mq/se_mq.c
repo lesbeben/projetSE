@@ -4,7 +4,7 @@
 #include <fcntl.h>
 #include <string.h>
 #include "se_mq.h"
-#include "error.h"
+#include "../error.h"
 
 /*
  * 
@@ -125,6 +125,6 @@ const operation_t _mq_op = {
 	, _mq_read, _mq_write, _mq_getfd, _mq_unlink, "mq"
 };
 
-operation_t mq_getOp() {
+operation_t getop() {
 	return _mq_op;
 }

@@ -11,8 +11,9 @@
 #include <sys/eventfd.h>
 #include <errno.h>
 #include <signal.h>
+
 #include "se_shm.h"
-#include "error.h"
+#include "../error.h"
 
 /*
  * La structure interne du segment de mémoire partagée
@@ -388,6 +389,6 @@ const operation_t _shm_op = {
 	, _shm_read, _shm_write, _shm_getfd, _shm_unlink, "shm"
 };
 
-operation_t shm_getOp() {
+operation_t getop() {
 	return _shm_op;
 }

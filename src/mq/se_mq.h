@@ -1,12 +1,12 @@
 #ifndef SE_MQ_H
 #define SE_MQ_H
 
-#include "stream.h"
+#include "../stream.h"
 
 /**
  * 
  */
-operation_t mq_getOp();
+operation_t getop();
 
 	
 #endif

@@ -9,12 +9,13 @@
 #include <fcntl.h>
 
 #include "se_fifo.h"
-#include "error.h"
+#include "../error.h"
 
 /*
  * 
  */
 static int _fifo_create(streamd_t* sd, const char* name, size_t size) {
+	printf("fifo\n");
 	if (mkfifo(name, S_IRUSR | S_IWUSR) == -1) {
 		perror("mkfifo");
 		return -1;
@@ -149,6 +150,6 @@ static const operation_t _fifo_op  = {
 	, _fifo_write, _fifo_getfd, _fifo_unlink, "fif"
 };
 	
-operation_t fifo_getOp() {
+operation_t getop() {
 	return _fifo_op;
 }

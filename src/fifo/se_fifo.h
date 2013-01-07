@@ -1,12 +1,12 @@
 #ifndef SE_FIFO_H
 #define SE_FIFO_H
 
-#include "stream.h"
+#include "../stream.h"
 
 /**
  * 
  */
-operation_t fifo_getOp();
+operation_t getop();
 
 	
 #endif

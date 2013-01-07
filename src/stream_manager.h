@@ -7,6 +7,11 @@
 #include "stream.h"
 
 /**
+ * 
+ */
+void manager_init();
+
+/**
  * Renvoie un flux de type "streamname"
  */
 stream_t manager_getstream(const char* streamName);
@@ -27,5 +32,9 @@ void manager_removestream(stream_t* stream);
  */
 void manager_clean();
 
+/**
+ * 
+ */
+void manager_close();
 
 #endif
