@@ -16,6 +16,7 @@ void pid_help() {
 }
 
 request_t* pid_request_func(const char* cmd) {
+	printf("%s\n", cmd);
 	char* tailptr[] = { NULL };
 	pid_t pid = strtol(cmd + 3, tailptr, 0);
 	if (errno != 0) {
