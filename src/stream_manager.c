@@ -25,7 +25,7 @@ typedef struct STREAM_LIST {
 /*
  * La liste des flux à gérer
  */
-stream_list_t stream_list = NULL;
+static stream_list_t stream_list = NULL;
 
 /*
  * Structure des listes de bibliotheques dynamique chargées.
@@ -43,13 +43,13 @@ typedef struct DL_LIST {
 dl_list_t dl_list = NULL;
 
 void manager_init() {
-	const char* dirname= "plugin/";
+	const char* dirname= "plugin/stream/";
 	DIR* dir = opendir(dirname);
 	if (dir == NULL) {
 		perror("opendir");
 		raise(SIGTERM);
 	}
-	char name[256 + 7];
+	char name[256 + 14];
 	dl_list_t element = NULL;
 	
 	struct dirent* ent = readdir(dir);
@@ -70,9 +70,8 @@ void manager_init() {
 				ent = readdir(dir);
 				continue;
 			}
-			operation_t op = func();
 			element = malloc(sizeof(struct DL_LIST));
-			element->op = op;
+			element->op = func();;
 			element->handler = hndl;
 			element->next = dl_list;
 			dl_list = element;
@@ -90,7 +89,7 @@ void manager_init() {
 stream_t manager_getstream(const char* streamName) {
 	dl_list_t elmnt = dl_list;
 	operation_t op;
-	while (elmnt != NULL) {
+	while (elmnt != NULL) { 
 		if (strcmp(streamName, elmnt->op.name) == 0) {
 			op = elmnt->op;
 			break;

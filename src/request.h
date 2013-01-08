@@ -22,20 +22,4 @@ typedef struct {
 	char data[1];
 } request_t;
 
-/**
- * Alloue une requete en fonction de la commande cmd
- * La requete doit etre détruite pour éviter les fuite de mémoires
- */
-request_t* create_request(const char* cmd);
-
-/**
- * Detruit une requete
- */
-void delete_request(request_t* req);
-
-/**
- * Remplie un buffer de la réponse à une requete
- */
-int getanswer(request_t* req, char* buffer, size_t buffsize);
-
 #endif

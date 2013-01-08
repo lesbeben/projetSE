@@ -15,7 +15,6 @@
  * 
  */
 static int _fifo_create(streamd_t* sd, const char* name, size_t size) {
-	printf("fifo\n");
 	if (mkfifo(name, S_IRUSR | S_IWUSR) == -1) {
 		perror("mkfifo");
 		return -1;

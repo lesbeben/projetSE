@@ -9,12 +9,12 @@ $(LIBNAME) : se_mq.o
 	$(CC) $(CFLAGS) -shared $(LDLIBS) -o $(LIBNAME) se_mq.o
 	
 install :
-	mkdir -p ../../bin/plugin/
-	cp $(LIBNAME) ../../bin/plugin/$(LIBNAME)
+	mkdir -p ../../bin/plugin/stream/
+	cp $(LIBNAME) ../../bin/plugin/stream/$(LIBNAME)
     
 uninstall :
-	rm -f ../../bin/plugin/$(LIBNAME)
-	rmdir --ignore-fail-on-non-empty ../../bin/plugin/ ../../bin/
+	rm -f ../../bin/plugin/stream/$(LIBNAME)
+	rmdir --ignore-fail-on-non-empty ../../bin/plugin/stream/ ../../bin/
     
 clean :
 	rm -f *.o $(LIBNAME)

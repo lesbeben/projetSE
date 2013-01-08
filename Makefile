@@ -1,4 +1,6 @@
-DIRS = src/mq src/shm src/fifo src/
+DIRS = src/ \
+       src/mq src/shm src/fifo \
+       src/client_command src/server_command
 
 all :
 	-for d in $(DIRS); do (cd $$d; $(MAKE) all ); done
