@@ -1,5 +1,5 @@
 DIRS = src/ \
-       src/mq src/shm src/fifo \
+       src/stream \
        src/client_command src/server_command
 
 all :

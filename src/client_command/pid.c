@@ -3,6 +3,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <errno.h>
+#include <limits.h>
 #include "command.h"
 
 //////////////////// //////////////////////////////////////
@@ -12,22 +13,19 @@ void pid_help() {
     printf("Commande PID\n");
     printf("  Affiche le nom du processus 'numpid'\n");
     printf("  Usage : \n");
-    printf("  \"PID numpid\"\n");
+    printf("    \"PID numpid\"\n");
 }
 
 request_t* pid_request_func(const char* cmd) {
-	printf("%s\n", cmd);
 	char* tailptr[] = { NULL };
 	pid_t pid = strtol(cmd + 3, tailptr, 0);
-	if (errno != 0) {
-		perror("strtol");
-		return NULL;
+	if ((errno == ERANGE && (pid == LONG_MAX || pid == LONG_MIN))
+		   || (errno != 0 && pid == 0)) {
+	    fprintf(stderr, "%s n'est pas un entier\n", cmd + 3);
+	    pid_help();
+	    return NULL;
 	}
-	if ((pid == 0) && (tailptr[0] != NULL)) {
-		fprintf(stderr, "%s n'est pas un entier\n", cmd);
-        pid_help();
-		return NULL;
-	}
+
 	request_t* req = malloc(sizeof(request_t) + sizeof(pid_t));
 	req->size = sizeof(request_t) + sizeof(pid_t);
 	strncpy(req->cmdname, cmd, 3);

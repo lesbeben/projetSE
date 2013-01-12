@@ -43,7 +43,7 @@ void process_request(request_t *req) {
 
 //procedure de gestion des signaux
 void signal_handler(int signum){ // a modifier
-	printf("recu signal: %d", signum);
+	printf("recu signal: %d\n", signum);
 	manager_clean();
 	exit(EXIT_SUCCESS);
 }

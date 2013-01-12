@@ -1,5 +1,5 @@
-#ifndef SE_MQ_H
-#define SE_MQ_H
+#ifndef STREAM_INPUT_H
+#define STREAM_INPUT_H
 
 #include "../stream.h"
 

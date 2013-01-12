@@ -32,7 +32,7 @@
 
 //procedure de gestion des signaux
 void signal_handler(int signum){ // a modifier
-	printf("recu signal: %d", signum);
+	printf("recu signal: %d\n", signum);
 	manager_clean();
 	exit(EXIT_SUCCESS);
 }
@@ -54,6 +54,13 @@ int main(int argc, char **argv) {
 		perror("sigfillset");
 		raise(SIGTERM);
 	}
+    int signals[] = {SIGINT, SIGTERM};
+    for (int i = 0; i < 2; i++) {
+        if (sigaction(signals[i], &action, NULL) == -1) {
+            perror("sigaction");
+            exit(EXIT_FAILURE);
+        }
+    }
 	
 	//pour l'instant flux de question en dur
 	stream_t req_str;
@@ -78,28 +85,31 @@ int main(int argc, char **argv) {
 	
 	int res= 0;
 	while (res != -233) { //code exit
+	    printf("Entrez une commande : ");
+	    fflush(stdout);
 		//on lit la commande sur l'entree standard
-		read(STDIN_FILENO, cmd_buf, BUFSIZ); //utiliser fgets
+		fgets(cmd_buf, BUFSIZ, stdin);
 		//on cree la requete
 		req = create_request(cmd_buf);
-		strncpy(req->answer_stream, "fif", 3);
-		//on envoie la question
-		if (stream_write(&req_str, req, BUFSIZ-1) < 0) {
-			raise(SIGTERM);
-			//plantage
+		if (req != NULL) {
+			strncpy(req->answer_stream, "fif", 3);
+			//on envoie la question
+			if (stream_write(&req_str, req, BUFSIZ-1) < 0) {
+				raise(SIGTERM);
+				//plantage
+			}
+			//on recoit la reponse
+			int n = 0;
+			if ((n = stream_read(&ans_str, &ans_buf, BUFSIZ-1)) < 0) {
+				raise(SIGTERM);
+				//plantage
+			}
+			//on affiche la reponse
+			ans_buf[n] = '\0';
+			printf("%s\n", ans_buf);
+			//on efface la requete
+			delete_request(req);
 		}
-		
-		//on recoit la reponse
-		int n = 0;
-		if ((n = stream_read(&ans_str, &ans_buf, BUFSIZ-1)) < 0) {
-			raise(SIGTERM);
-			//plantage
-		}
-		//on affiche la reponse
-		ans_buf[n] = '\0';
-		printf("%s\n", ans_buf);
-		//on efface la requete
-		delete_request(req);
 	}
 	if (stream_close(&req_str) < 0) {
 		//ajouter gestion des cas -1 -2

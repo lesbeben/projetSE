@@ -3,7 +3,8 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <string.h>
-#include "se_mq.h"
+
+#include "stream.h"
 #include "../error.h"
 
 /*

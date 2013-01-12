@@ -1,6 +1,6 @@
 include ../../Makefile.inc
 
-LIBNAME = pid gid uid time add
+LIBNAME = fifo mq shm
 
 all:
 	-for f in $(LIBNAME); do \
@@ -8,13 +8,13 @@ all:
 	done;
 	
 install :
-	mkdir -p ../../bin/plugin/clientcmd
+	mkdir -p ../../bin/plugin/stream/
 	-for f in $(LIBNAME); do \
-		cp lib$$f.so ../../bin/plugin/clientcmd/; \
+		cp lib$$f.so ../../bin/plugin/stream/; \
 	done;
     
 uninstall :
-	rm -rf ../../bin/plugin/clientcmd
+	rm -rf ../../bin/plugin/stream
 	rmdir --ignore-fail-on-non-empty ../../bin/plugin/ ../../bin/
 	
 clean :

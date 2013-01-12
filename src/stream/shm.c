@@ -12,7 +12,7 @@
 #include <errno.h>
 #include <signal.h>
 
-#include "se_shm.h"
+#include "stream.h"
 #include "../error.h"
 
 /*

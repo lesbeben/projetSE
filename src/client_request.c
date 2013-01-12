@@ -78,7 +78,7 @@ request_t* create_request(const char* cmd) {
 		}
 		elmnt = elmnt->next;
 	}
-	fprintf(stderr, "Commande %s inconnue\n", cmd);
+	fprintf(stderr, "Commande %.3s inconnue\n", cmd);
 	return NULL;
 }
 

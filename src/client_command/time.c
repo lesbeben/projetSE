@@ -13,7 +13,7 @@ void time_help() {
     printf("Commande TIM\n");
     printf("  Affiche l'heure du serveur\n");
     printf("  Usage : \n");
-    printf("    \"TIME\"\n");
+    printf("    \"TIM\"\n");
 }
 
 request_t* time_request_func(const char* cmd) {

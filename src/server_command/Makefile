@@ -1,6 +1,6 @@
 include ../../Makefile.inc
 
-LIBNAME = pid gid time
+LIBNAME = pid gid uid time add
 
 all:
 	-for f in $(LIBNAME); do \

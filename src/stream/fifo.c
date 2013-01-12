@@ -8,7 +8,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
-#include "se_fifo.h"
+#include "stream.h"
 #include "../error.h"
 
 /*
