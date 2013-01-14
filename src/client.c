@@ -64,7 +64,7 @@ int main(int argc, char **argv) {
 	
 	//pour l'instant flux de question en dur
 	stream_t req_str;
-	req_str = manager_getstream("shm");
+	req_str = manager_getstream("SHM");
 	if (stream_open(&req_str, request_name, O_WRONLY) < 0) { 
 		//ajouter gestion des cas -1 -2
 		raise(SIGTERM);
@@ -73,7 +73,7 @@ int main(int argc, char **argv) {
 	//on calcule le nom de flux de reponse
     sprintf(ans_name, "%s%i", answer_prefix, getpid());
     //on cree et ouvre le flux de reponse (en dur pour l'instant
-    stream_t ans_str = manager_getstream("fif");
+    stream_t ans_str = manager_getstream("FIF");
     if (stream_create(&ans_str, ans_name, BUFSIZ-1) < 0) { //quelle taille pour le create?
 		//ajouter gestion des cas -1 -2
 		raise(SIGTERM);
@@ -92,7 +92,7 @@ int main(int argc, char **argv) {
 		//on cree la requete
 		req = create_request(cmd_buf);
 		if (req != NULL) {
-			strncpy(req->answer_stream, "fif", 3);
+			strncpy(req->answer_stream, "FIF", 3);
 			//on envoie la question
 			if (stream_write(&req_str, req, BUFSIZ-1) < 0) {
 				raise(SIGTERM);

@@ -74,7 +74,7 @@ int main(int argc, char **argv) {
 	// On initialise le request_manager
 	request_manager_init();
 	//on cree en dur les types de stream
-	stream_t req_str[] ={ manager_getstream("fif"), manager_getstream("mq"), manager_getstream("shm")};//faire des constantes de type TUBE SHM MQ
+	stream_t req_str[] ={ manager_getstream("FIF"), manager_getstream("MQU"), manager_getstream("SHM")};//faire des constantes de type TUBE SHM MQ
 	stream_set_t sset;
 	// Faire un clear du set
 	stream_set_clear(&sset);
@@ -183,5 +183,7 @@ int main(int argc, char **argv) {
 	manager_close();
 	// On close le request_manager
 	request_manager_close();
+	
+	return EXIT_SUCCESS;
 }
 

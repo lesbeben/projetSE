@@ -123,7 +123,7 @@ static int _mq_unlink(const char* name) {
  */
 const operation_t _mq_op = {
 	_mq_create,_mq_open, _mq_close
-	, _mq_read, _mq_write, _mq_getfd, _mq_unlink, "mq"
+	, _mq_read, _mq_write, _mq_getfd, _mq_unlink, "MQU"
 };
 
 operation_t getop() {

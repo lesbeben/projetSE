@@ -11,6 +11,7 @@
 #include "stream.h"
 #include "../error.h"
 
+
 /*
  * 
  */
@@ -41,7 +42,7 @@ static int _fifo_open(streamd_t* sd, const char* name, int oflag) {
 			case 0 : 
 				if (open(name, O_WRONLY) == -1) {
 					fprintf(stderr, "%s\n", name);
-					perror("open1");
+					perror("open");
 				}
 				exit(EXIT_SUCCESS);
 			default:
@@ -146,7 +147,7 @@ static int _fifo_unlink(const char* name) {
  */
 static const operation_t _fifo_op  = {
 	_fifo_create, _fifo_open, _fifo_close, _fifo_read
-	, _fifo_write, _fifo_getfd, _fifo_unlink, "fif"
+	, _fifo_write, _fifo_getfd, _fifo_unlink, "FIF"
 };
 	
 operation_t getop() {

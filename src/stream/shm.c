@@ -40,8 +40,6 @@ typedef struct {
 	sem_t* write;
 } data_t;
 
-
-
 /*
  * Fonction qui permet d'enregister le gestionnaire auprès des signaux
  *   de terminaisons du processus de traitement des 
@@ -386,7 +384,7 @@ static int _shm_unlink(const char* name) {
  */
 const operation_t _shm_op = {
 	_shm_create, _shm_open, _shm_close
-	, _shm_read, _shm_write, _shm_getfd, _shm_unlink, "shm"
+	, _shm_read, _shm_write, _shm_getfd, _shm_unlink, "SHM"
 };
 
 operation_t getop() {
