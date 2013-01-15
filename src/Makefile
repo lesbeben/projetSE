@@ -3,17 +3,19 @@ include ../Makefile.inc
 SERVER   = server
 CLIENT   = client
 OBJFILES = stream.o stream_manager.o stream_set.o error.o
+SERVEROBJ = server.o server_request.o server_signal.o
+CLIENTOBJ = client.o client_request.o client_signal.o
 
 all: $(SERVER) $(CLIENT)
 
 %.o: %.c
 	$(CC) $(CFLAGS) $(LDLIBS) -o $@ -c $<
 
-$(SERVER) : server.o server_request.o $(OBJFILES)
-	$(CC) $(CFLAGS) $(LDLIBS) -o $(SERVER) server.o server_request.o $(OBJFILES)
+$(SERVER) : $(SERVEROBJ) $(OBJFILES)
+	$(CC) $(CFLAGS) $(LDLIBS) -o $(SERVER) $(SERVEROBJ) $(OBJFILES)
 
-$(CLIENT) : client.o client_request.o $(OBJFILES)
-	$(CC) $(CFLAGS) $(LDLIBS) -o $(CLIENT) client.o client_request.o $(OBJFILES)
+$(CLIENT) : $(CLIENTOBJ) $(OBJFILES)
+	$(CC) $(CFLAGS) $(LDLIBS) -o $(CLIENT) $(CLIENTOBJ) $(OBJFILES)
 		
 install :
 	mkdir -p ../bin/

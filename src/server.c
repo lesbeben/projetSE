@@ -5,8 +5,8 @@
 #include "stream_manager.h"
 #include "stream_set.h"
 #include "server_request.h"
-#include "project.h" //verifier les includes
-
+#include "signal.h"
+#include "project.h"
 
 void help(){
 	printf("./server \n"); // a changer
@@ -41,46 +41,25 @@ void process_request(request_t *req) {
 
 }
 
-//procedure de gestion des signaux
-void signal_handler(int signum){ // a modifier
-	printf("recu signal: %d\n", signum);
-	manager_clean();
-	exit(EXIT_SUCCESS);
-}
-
 int main(int argc, char **argv) {
-
-	//if (argc != 2){ // ou pas
-		//help();
-		//exit(EXIT_FAILURE);
-	//}
-	
-	//on initialise sigaction
-	struct sigaction action;
-	action.sa_handler = signal_handler;
-	action.sa_flags = 0;
-	if (sigfillset(&action.sa_mask) == -1) {
-		perror("sigfillset");
-		raise(SIGTERM);
-	}
-    int signals[] = {SIGINT, SIGTERM};
-    for (int i = 0; i < 2; i++) {
-        if (sigaction(signals[i], &action, NULL) == -1) {
-            perror("sigaction");
-            exit(EXIT_FAILURE);
-        }
-    }
+	//on initialise les signaux
+	setSignals();
+	// On initialise le stream manager
 	manager_init();
-	// On initialise le request_manager
+	// On initialise le request manager
 	request_manager_init();
+	
 	//on cree en dur les types de stream
-	stream_t req_str[] ={ manager_getstream("FIF"), manager_getstream("MQU"), manager_getstream("SHM")};//faire des constantes de type TUBE SHM MQ
+	stream_t req_str[] = {
+		manager_getstream("FIF")
+		, manager_getstream("MQU")
+		, manager_getstream("SHM")
+	};
 	stream_set_t sset;
-	// Faire un clear du set
+	// On initialise l'ensemble de flux.
 	stream_set_clear(&sset);
 	int n = 0;
 	char buffer[BUFSIZ];
-	
 	//creer map (clientpid, tube)
 
 	//on cree et ouvre les trois streams et on les ajoute au set
@@ -97,88 +76,87 @@ int main(int argc, char **argv) {
 	}
 
 	//on lance le serveur
-	while (stream_set_select(&sset) > 0) {
-		//pour tous les types de flux qui sont actifs
-		for (int i = 0; i < 3; ++i) {
-			if ((n =stream_set_isset(&sset, &req_str[i]) > 0)) {
-				//si client pid pas dans map
-					
-					//ajouter (pid,tube) a la map
-					
-					//on cree le tube serveur/sous-serveur
-					int tube[2];
-					if (pipe(tube) == -1) {
-						perror("pipe");
-						exit(EXIT_FAILURE);
-					}
-					 
-					switch(fork()) {
-						case -1:
-							//envoyer message de plantage a tous les tubes de la map
-							
-						case 0:
-							//on ferme l'entree du tube
-							close(tube[1]);
-							//on gere les requetes
-							while(((n = read(tube[0], buffer, BUFSIZ)) > 0) && (errno != EINTR)){ // Pas req mais buffer de bufsize
-								process_request((request_t*) buffer);
-							}
-							//on verifie aue tout s'est bien passe
-							if (n == -1) {
-								perror("read");
+	while ((stream_set_select(&sset) > 0) && !isDone()) {
+		if (errno == 0) {
+			//pour tous les types de flux qui sont actifs
+			for (int i = 0; i < 3; ++i) {
+				if ((n =stream_set_isset(&sset, &req_str[i]) > 0)) {
+					//si client pid pas dans map
+						
+						//ajouter (pid,tube) a la map
+						
+						//on cree le tube serveur/sous-serveur
+						int tube[2];
+						if (pipe(tube) == -1) {
+							perror("pipe");
+							exit(EXIT_FAILURE);
+						}
+						 
+						switch(fork()) {
+							case -1:
+								//envoyer message de plantage a tous les tubes de la map
+								
+							case 0:
+								//on ferme l'entree du tube
+								close(tube[1]);
+								//on gere les requetes
+								while(((n = read(tube[0], buffer, BUFSIZ)) > 0) && (errno != EINTR)){ // Pas req mais buffer de bufsize
+									process_request((request_t*) buffer);
+								}
+								//on verifie aue tout s'est bien passe
+								if (n == -1) {
+									perror("read");
+									raise(SIGTERM);
+								}
+								//on ferme la sortie du tube
+								close(tube[0]);
+								//on ferme le sous-serveur
 								raise(SIGTERM);
-							}
-							//on ferme la sortie du tube
-							close(tube[0]);
-							//on ferme le sous-serveur
-							raise(SIGTERM);
-							
-						default:
-							//on ferme la sortie du tube
-							close(tube[0]);
-							
-							//on lit dans le flux
-							if (stream_read(&req_str[i], buffer, BUFSIZ) < 0) { // buff de buffsize
-								raise(SIGTERM);
-								//plantage
-							}
-							
-							//on ecrit dans le tube
-							if (write(tube[1], buffer, BUFSIZ) < 0) {
-								perror("write");
-								raise(SIGTERM);
-								//plantage
-							}
-							
-							//on refait un tour
-							break;
-					}
-				//si clientpid dans la map
-					//faire suivre la request dans le tube du sous-serveur
-			}
-			//on teste les erreur de stream_set_isset
-			if (n <  0){
-				//on gere l'erreur
+								
+							default:
+								//on ferme la sortie du tube
+								close(tube[0]);
+								
+								//on lit dans le flux
+								if (stream_read(&req_str[i], buffer, BUFSIZ) < 0) { // buff de buffsize
+									raise(SIGTERM);
+									//plantage
+								}
+								
+								//on ecrit dans le tube
+								if (write(tube[1], buffer, BUFSIZ) < 0) {
+									perror("write");
+									raise(SIGTERM);
+									//plantage
+								}
+								
+								//on refait un tour
+								break;
+						}
+					//si clientpid dans la map
+						//faire suivre la request dans le tube du sous-serveur
+				}
+				//on teste les erreur de stream_set_isset
+				if (n <  0){
+					//on gere l'erreur
+				}
 			}
 		}
-		// Faire un clear du set
+		errno = 0;
+		// On ré-initialise l'ensemble de flux
 		stream_set_clear(&sset);
-		//on remet tous les flux dans le set
 		for (int i = 0; i < 3; ++i) {
 			stream_set_add(&sset, &req_str[i]);
 		}
 	}
-	//on close et on unlink tous les flux
+	//On close tous les flux
 	for (int i = 0; i < 3; ++i) {
 		if (stream_close(&req_str[i]) < 0) {
-			//ajouter gestion des cas -1 -2
-			raise(SIGTERM);
+			fprintf(stderr, "Impossible de fermer un flux\n");
 		}
-		if (stream_unlink(&req_str[i], request_name) < 0) { 
-			//ajouter gestion des cas -1 -2
-			raise(SIGTERM);
-		}
-	}	
+	}
+	// Le manager s'occupe de supprimer tous les flux créés.
+	manager_clean();
 	// On close le stream_manager
 	manager_close();
 	// On close le request_manager

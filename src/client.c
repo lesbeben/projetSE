@@ -28,39 +28,21 @@
 #include "stream_manager.h"
 #include "stream_set.h"
 #include "client_request.h"
-#include "project.h" //verifier les includes
-
-//procedure de gestion des signaux
-void signal_handler(int signum){ // a modifier
-	printf("recu signal: %d\n", signum);
-	manager_clean();
-	exit(EXIT_SUCCESS);
-}
+#include "signal.h"
+#include "project.h"
 
 int main(int argc, char **argv) {
+	// On initialise les signaux
+	setSignals();
 	// On initialise le stream_manager
 	manager_init();
 	// On initialise le request_manager
 	request_manager_init();
+	
 	request_t *req = NULL;
 	char ans_name[STRSIZ];
 	char ans_buf[BUFSIZ];
 	char cmd_buf[BUFSIZ];
-	//on initialise sigaction
-	struct sigaction action;
-	action.sa_handler = signal_handler;
-	action.sa_flags = 0;
-	if (sigfillset(&action.sa_mask) == -1) {
-		perror("sigfillset");
-		raise(SIGTERM);
-	}
-    int signals[] = {SIGINT, SIGTERM};
-    for (int i = 0; i < 2; i++) {
-        if (sigaction(signals[i], &action, NULL) == -1) {
-            perror("sigaction");
-            exit(EXIT_FAILURE);
-        }
-    }
 	
 	//pour l'instant flux de question en dur
 	stream_t req_str;
@@ -83,49 +65,50 @@ int main(int argc, char **argv) {
 		raise(SIGTERM);
 	}
 	
-	int res= 0;
-	while (res != -233) { //code exit
+	while (!isDone()) {
 	    printf("Entrez une commande : ");
 	    fflush(stdout);
 		//on lit la commande sur l'entree standard
 		fgets(cmd_buf, BUFSIZ, stdin);
-		//on cree la requete
-		req = create_request(cmd_buf);
-		if (req != NULL) {
-			strncpy(req->answer_stream, "FIF", 3);
-			//on envoie la question
-			if (stream_write(&req_str, req, BUFSIZ-1) < 0) {
-				raise(SIGTERM);
-				//plantage
-			}
-			//on recoit la reponse
-			int n = 0;
-			if ((n = stream_read(&ans_str, &ans_buf, BUFSIZ-1)) < 0) {
-				raise(SIGTERM);
-				//plantage
-			}
-			//on affiche la reponse
-			ans_buf[n] = '\0';
-			printf("%s\n", ans_buf);
-			//on efface la requete
-			delete_request(req);
+		if (errno == 0) {
+			//on cree la requete
+			req = create_request(cmd_buf);
+			if (req != NULL) {
+				strncpy(req->answer_stream, "FIF", 3);
+				//on envoie la question
+				if (stream_write(&req_str, req, BUFSIZ-1) < 0) {
+					raise(SIGTERM);
+					//plantage
+				}
+				//on recoit la reponse
+				int n = 0;
+				if ((n = stream_read(&ans_str, &ans_buf, BUFSIZ-1)) < 0) {
+					raise(SIGTERM);
+					//plantage
+				}
+				//on affiche la reponse
+				ans_buf[n] = '\0';
+				printf("%s\n", ans_buf);
+				//on efface la requete
+				delete_request(req);
+			}			
 		}
+		errno = 0;
 	}
+	
 	if (stream_close(&req_str) < 0) {
-		//ajouter gestion des cas -1 -2
-		raise(SIGTERM);
+		fprintf(stderr, "Impossible de fermer le flux de requetes\n");
 	}
 	if (stream_close(&ans_str) < 0) {
-		//ajouter gestion des cas -1 -2
-		raise(SIGTERM);
+		fprintf(stderr, "Impossible de fermer le flux de reponses\n");
 	}
-	if (stream_unlink(&ans_str, ans_name) < 0) { 
-		//ajouter gestion des cas -1 -2
-		raise(SIGTERM);
-	}
+
+	// Le manager s'occupe de supprimer tous les flux créés.
+	manager_clean();
 	// On close le stream_manager
 	manager_close();
 	// On close le request_manager
 	request_manager_close();
+	
 	return EXIT_SUCCESS;
 }
