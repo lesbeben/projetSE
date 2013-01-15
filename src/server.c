@@ -6,6 +6,7 @@
 #include "stream_set.h"
 #include "server_request.h"
 #include "signal.h"
+#include "child_list.h"
 #include "project.h"
 
 void help(){
@@ -81,21 +82,25 @@ int main(int argc, char **argv) {
 			//pour tous les types de flux qui sont actifs
 			for (int i = 0; i < 3; ++i) {
 				if ((n =stream_set_isset(&sset, &req_str[i]) > 0)) {
-					//si client pid pas dans map
-						
-						//ajouter (pid,tube) a la map
-						
+					//on lit dans le flux
+					if (stream_read(&req_str[i], buffer, BUFSIZ) < 0) { // buff de buffsize
+						raise(SIGTERM);
+						//plantage
+					}
+					request_t* req = (request_t*) buffer;
+					pid_t clientPid = req->clientpid;
+					
+					//S'il n'y a pas de processus de traitement associé à ce client
+					if (!childExist(clientPid)) {
 						//on cree le tube serveur/sous-serveur
 						int tube[2];
 						if (pipe(tube) == -1) {
 							perror("pipe");
-							exit(EXIT_FAILURE);
+							raise(SIGTERM);
 						}
-						 
 						switch(fork()) {
 							case -1:
-								//envoyer message de plantage a tous les tubes de la map
-								
+								break;
 							case 0:
 								//on ferme l'entree du tube
 								close(tube[1]);
@@ -116,25 +121,19 @@ int main(int argc, char **argv) {
 							default:
 								//on ferme la sortie du tube
 								close(tube[0]);
-								
-								//on lit dans le flux
-								if (stream_read(&req_str[i], buffer, BUFSIZ) < 0) { // buff de buffsize
-									raise(SIGTERM);
-									//plantage
-								}
-								
-								//on ecrit dans le tube
-								if (write(tube[1], buffer, BUFSIZ) < 0) {
-									perror("write");
-									raise(SIGTERM);
-									//plantage
-								}
-								
-								//on refait un tour
+								addChild(clientPid, tube[1]);
 								break;
 						}
-					//si clientpid dans la map
-						//faire suivre la request dans le tube du sous-serveur
+					}
+					//on ecrit dans le tube
+					int tube = getPipe(clientPid);
+					if (tube != -1) {
+						if (write(tube, buffer, BUFSIZ) < 0) {
+							perror("write");
+							raise(SIGTERM);
+							//plantage
+						}						
+					}
 				}
 				//on teste les erreur de stream_set_isset
 				if (n <  0){
@@ -155,6 +154,8 @@ int main(int argc, char **argv) {
 			fprintf(stderr, "Impossible de fermer un flux\n");
 		}
 	}
+	
+	childsClean();
 	// Le manager s'occupe de supprimer tous les flux créés.
 	manager_clean();
 	// On close le stream_manager

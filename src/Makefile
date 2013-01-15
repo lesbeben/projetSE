@@ -3,7 +3,7 @@ include ../Makefile.inc
 SERVER   = server
 CLIENT   = client
 OBJFILES = stream.o stream_manager.o stream_set.o error.o
-SERVEROBJ = server.o server_request.o server_signal.o
+SERVEROBJ = server.o server_request.o server_signal.o child_list.o
 CLIENTOBJ = client.o client_request.o client_signal.o
 
 all: $(SERVER) $(CLIENT)
