@@ -13,35 +13,6 @@ void help(){
 	printf("./server \n"); // a changer
 }
 
-
-//procedure de reponse
-void process_request(request_t *req) {
-    char ans_name[STRSIZ];
-    char buf[BUFSIZ];
-    //on calcule le nom de flux de reponse
-    sprintf(ans_name, "%s%i", answer_prefix, req->clientpid);
-    //on ouvre le flux de reponse
-    stream_t ans_str = manager_getstream(req->answer_stream);
-    if (stream_open(&ans_str, ans_name, O_WRONLY) < 0) { 
-		//ajouter gestion des cas -1 -2
-		raise(SIGTERM);
-	}
-	//on met la reponse dans le buffer
-	get_answer(req, buf, BUFSIZ); // ou un switch sur les cmdname?
-	//on envoie la reponse
-	if (stream_write(&ans_str, buf, BUFSIZ-1) < 0) {
-		raise(SIGTERM);
-		//plantage
-	}							
-    //on ferme le  flux de reponse
-    if (stream_close(&ans_str) < 0) {
-		//ajouter gestion des cas -1 -2
-		raise(SIGTERM);
-	}
-    
-
-}
-
 int main(int argc, char **argv) {
 	//on initialise les signaux
 	setSignals();
@@ -65,11 +36,11 @@ int main(int argc, char **argv) {
 
 	//on cree et ouvre les trois streams et on les ajoute au set
 	for (int i = 0; i < 3; ++i) {
-		if (stream_create(&req_str[i], request_name, BUFSIZ) < 0) { //quelle taille pour le create?
+		if (stream_create(&req_str[i], getRequestName(), BUFSIZ) < 0) { //quelle taille pour le create?
 			//ajouter gestion des cas -1 -2
 			raise(SIGTERM);
 		}
-		if (stream_open(&req_str[i], request_name, O_RDONLY) < 0) { 
+		if (stream_open(&req_str[i], getRequestName(), O_RDONLY) < 0) { 
 			//ajouter gestion des cas -1 -2
 			raise(SIGTERM);
 		}
@@ -81,7 +52,7 @@ int main(int argc, char **argv) {
 		if (errno == 0) {
 			//pour tous les types de flux qui sont actifs
 			for (int i = 0; i < 3; ++i) {
-				if ((n =stream_set_isset(&sset, &req_str[i]) > 0)) {
+				if ((n = stream_set_isset(&sset, &req_str[i]) > 0)) {
 					//on lit dans le flux
 					if (stream_read(&req_str[i], buffer, BUFSIZ) < 0) { // buff de buffsize
 						raise(SIGTERM);
@@ -89,7 +60,6 @@ int main(int argc, char **argv) {
 					}
 					request_t* req = (request_t*) buffer;
 					pid_t clientPid = req->clientpid;
-					
 					//S'il n'y a pas de processus de traitement associé à ce client
 					if (!childExist(clientPid)) {
 						//on cree le tube serveur/sous-serveur
@@ -104,23 +74,16 @@ int main(int argc, char **argv) {
 							case 0:
 								//on ferme l'entree du tube
 								close(tube[1]);
-								//on gere les requetes
-								while(((n = read(tube[0], buffer, BUFSIZ)) > 0) && (errno != EINTR)){ // Pas req mais buffer de bufsize
-									process_request((request_t*) buffer);
-								}
-								//on verifie aue tout s'est bien passe
-								if (n == -1) {
-									perror("read");
-									raise(SIGTERM);
-								}
+								// On créé un processus de traitement
+								createChild(tube[0]);
 								//on ferme la sortie du tube
 								close(tube[0]);
 								//on ferme le sous-serveur
-								raise(SIGTERM);
-								
+								exit(EXIT_SUCCESS);
 							default:
 								//on ferme la sortie du tube
 								close(tube[0]);
+								printf("Connection d'un nouveau client : %d\n", clientPid);
 								addChild(clientPid, tube[1]);
 								break;
 						}
@@ -132,7 +95,7 @@ int main(int argc, char **argv) {
 							perror("write");
 							raise(SIGTERM);
 							//plantage
-						}						
+						}
 					}
 				}
 				//on teste les erreur de stream_set_isset

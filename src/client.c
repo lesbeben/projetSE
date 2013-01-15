@@ -47,13 +47,13 @@ int main(int argc, char **argv) {
 	//pour l'instant flux de question en dur
 	stream_t req_str;
 	req_str = manager_getstream("SHM");
-	if (stream_open(&req_str, request_name, O_WRONLY) < 0) { 
+	if (stream_open(&req_str, getRequestName(), O_WRONLY) < 0) { 
 		//ajouter gestion des cas -1 -2
 		raise(SIGTERM);
 	}
 	
 	//on calcule le nom de flux de reponse
-    sprintf(ans_name, "%s%i", answer_prefix, getpid());
+    sprintf(ans_name, "%s%i", getAnswerPrefix(), getpid());
     //on cree et ouvre le flux de reponse (en dur pour l'instant
     stream_t ans_str = manager_getstream("FIF");
     if (stream_create(&ans_str, ans_name, BUFSIZ-1) < 0) { //quelle taille pour le create?

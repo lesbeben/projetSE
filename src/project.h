@@ -1,4 +1,8 @@
-#ifndef TPROJECT_h
+/**
+ * Définit les données et opérations communes au server et au client.
+ */
+ 
+#ifndef PROJECT_h
 #define PROJECT_h
 
 
@@ -8,15 +12,11 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <sys/stat.h>
+
 #define STRSIZ 512
 
+const char* getRequestName();
 
-const char* request_name = "request_stream";
-/*
- * Préfixe du nom du tube nommé de réponse
- * Le nom du tube nommé sera de la forme :
- *   "answer + pid du client"
- */
-const char* answer_prefix = "answer_stream";
+const char* getAnswerPrefix();
 
 #endif

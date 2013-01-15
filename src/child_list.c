@@ -27,6 +27,7 @@ void addChild(pid_t clientPid, int pipe) {
 			elmnt->next = l;
 			elmnt->client = clientPid;
 			elmnt->pipe = pipe;
+			child_list = elmnt;
 		}
 	}
 }
@@ -50,9 +51,8 @@ int getPipe(pid_t clientPid) {
 	}
 	if ((elmnt != NULL) && (elmnt->client == clientPid)) {
 		return elmnt->pipe;
-	} else {
-		return -1;
 	}
+	return -1;
 }
 
 /**
@@ -69,12 +69,18 @@ void removeChild(pid_t clientPid) {
 			l->next = elmnt->next;
 			elmnt->next = deleted;
 			deleted = elmnt;
+			if (close(elmnt->pipe) == -1) {
+				perror("close");
+			}
 		}		
 	} else if ((l != NULL) && (l->client == clientPid)) {
 		child_list_t elmnt = l;
 		child_list = elmnt->next;
 		elmnt->next = deleted;
 		deleted = elmnt;
+		if (close(elmnt->pipe) == -1) {
+			perror("close");
+		}
 	}
 }
 
