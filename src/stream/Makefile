@@ -4,7 +4,7 @@ LIBNAME = fifo mq shm
 
 all:
 	-for f in $(LIBNAME); do \
-		$(CC) $(CFLAGS) -shared $(LDLIBS) -o lib$$f.so $$f.c; \
+		$(CC) $(CFLAGS) -shared -fPIC -o lib$$f.so $$f.c $(LDLIBS); \
 	done;
 	
 install :

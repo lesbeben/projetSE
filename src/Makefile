@@ -12,10 +12,10 @@ all: $(SERVER) $(CLIENT)
 	$(CC) $(CFLAGS) $(LDLIBS) -o $@ -c $<
 
 $(SERVER) : $(SERVEROBJ) $(OBJFILES)
-	$(CC) $(CFLAGS) $(LDLIBS) -o $(SERVER) $(SERVEROBJ) $(OBJFILES)
+	$(CC) $(CFLAGS) -o $(SERVER) $(SERVEROBJ) $(OBJFILES) $(LDLIBS)
 
 $(CLIENT) : $(CLIENTOBJ) $(OBJFILES)
-	$(CC) $(CFLAGS) $(LDLIBS) -o $(CLIENT) $(CLIENTOBJ) $(OBJFILES)
+	$(CC) $(CFLAGS) -o $(CLIENT) $(CLIENTOBJ) $(OBJFILES) $(LDLIBS)
 		
 install :
 	mkdir -p ../bin/
