@@ -3,6 +3,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <string.h>
+#include <mqueue.h>
 
 #include "stream.h"
 #include "../error.h"

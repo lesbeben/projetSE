@@ -8,7 +8,9 @@
 #define SIGNAL_H
 
 /**
- * Permet de signaler que le programme doit se termnier.
+ * Permet de signaler que le programme doit se termnier
+ * Post-condition : 
+ *   - isDone() == 1;
  */
 void done();
 
@@ -18,7 +20,7 @@ void done();
 int isDone();
 
 /**
- * Permet d'installer le gestionnaire de signals.
+ * Permet d'installer le gestionnaire de signaux.
  */
 void setSignals();
 

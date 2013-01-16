@@ -1,3 +1,8 @@
+/**
+ * Définie les opération du manager de flux.
+ * 
+ */
+
 #ifndef STREAM_MANAGER_H
 #define STREAM_MANAGER_H
 
@@ -7,12 +12,12 @@
 #include "stream.h"
 
 /**
- * 
+ * Initialise les flux pouvant être utilisés.
  */
 void manager_init();
 
 /**
- * Renvoie un flux de type "streamname"
+ * Renvoie un flux de type "streamname".
  */
 stream_t manager_getstream(const char* streamName);
 
@@ -33,7 +38,7 @@ void manager_removestream(stream_t* stream);
 void manager_clean();
 
 /**
- * 
+ * Nettoie les type de flux chargés.
  */
 void manager_close();
 

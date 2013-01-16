@@ -1,19 +1,23 @@
+/**
+ * Définie les structures de données et les opérations de traitement
+ *   des flux.
+ */
+ 
 #ifndef STREAM_H
 #define STREAM_H
 
 #include <stdlib.h>
 #include <stdio.h>
-#include <mqueue.h>
 
 /**
- *
+ * Le type des données d'un flux
  */
 typedef struct {
     void* data;
 } streamd_t;
 
 /**
- *
+ * Le type définissant les opérations d'un flux.
  */
 typedef struct {
 	int (*_create) (streamd_t*, const char*, size_t);
@@ -27,7 +31,8 @@ typedef struct {
 } operation_t;
 
 /**
- *
+ * La structure de données d'un flux.
+ * Un flux = opérations + données
  */
 typedef struct {
 	operation_t op;

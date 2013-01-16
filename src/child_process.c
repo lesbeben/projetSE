@@ -1,5 +1,13 @@
+/**
+ * Implémente les opérations de création des processus 
+ *   de traitement du serveur.
+ */
+ 
 #include <stdlib.h>
+#include <stdio.h>
 #include <errno.h>
+#include <fcntl.h>
+
 #include "server_request.h"
 #include "signal.h"
 #include "project.h"
@@ -19,6 +27,26 @@ static void _signal_handler(int signum) {
 		default:
 			break;
 	}
+}
+
+/*
+ * Met en place les signaux d'un pricessus de traitement.
+ */
+static void _setSignals() {
+	struct sigaction action;
+	action.sa_handler = _signal_handler;
+	action.sa_flags = 0;
+	if (sigfillset(&action.sa_mask) == -1) {
+		perror("sigfillset");
+		raise(SIGTERM);
+	}
+    int signals[] = {SIGQUIT, SIGINT, SIGTERM, SIGCHLD};
+    for (int i = 0; i < 4; i++) {
+        if (sigaction(signals[i], &action, NULL) == -1) {
+            perror("sigaction");
+            exit(EXIT_FAILURE);
+        }
+    }
 }
 
 //procedure de reponse
@@ -47,26 +75,8 @@ static void process_request(stream_t* stream, request_t *req) {
 		//on envoie la reponse
 		if (stream_write(stream, buf, BUFSIZ-1) < 0) {
 			raise(SIGTERM);
-			//plantage
 		}		
 	}
-}
-
-static void _setSignals() {
-	struct sigaction action;
-	action.sa_handler = _signal_handler;
-	action.sa_flags = 0;
-	if (sigfillset(&action.sa_mask) == -1) {
-		perror("sigfillset");
-		raise(SIGTERM);
-	}
-    int signals[] = {SIGQUIT, SIGINT, SIGTERM, SIGCHLD};
-    for (int i = 0; i < 4; i++) {
-        if (sigaction(signals[i], &action, NULL) == -1) {
-            perror("sigaction");
-            exit(EXIT_FAILURE);
-        }
-    }
 }
 
 void createChild(int pipe, pid_t clientPid) {
@@ -77,6 +87,7 @@ void createChild(int pipe, pid_t clientPid) {
 	stream_t ans_str = manager_getstream("FIF");
     //on calcule le nom de flux de reponse
     sprintf(ans_name, "%s%i", getAnswerPrefix(), clientPid);
+    // On ouvre la communication
     if (stream_open(&ans_str, ans_name, O_WRONLY) < 0) {
 		//ajouter gestion des cas -1 -2
 		raise(SIGTERM);

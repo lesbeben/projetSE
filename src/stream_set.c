@@ -1,3 +1,13 @@
+/**
+ * Implémente les structures de données et les opérations 
+ *   des ensembles de flux.
+ * Membres publique : 
+ *   - stream_set_add(stream_set_t*, stream_t*)
+ *   - stream_set_clear(stream_set_t*)
+ *   - stream_set_isset(stream_set_t*, stream_t*)
+ *   - stream_set_select(stream_set_t*, struct timeval*)
+ */
+ 
 #include "stream_set.h"
 
 int stream_set_add(stream_set_t* set, stream_t* stream) {

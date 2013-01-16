@@ -25,6 +25,8 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <errno.h>
+#include <fcntl.h>
+
 #include "stream_manager.h"
 #include "stream_set.h"
 #include "client_request.h"
@@ -50,7 +52,7 @@ int main(int argc, char **argv) {
 	char ans_stream_type[STRSIZ];
 	sprintf(ans_stream_type, "%s", "FIF");
 	
-	//pour l'instant flux de question en dur
+	// On ouvre le flux de requetes
 	stream_t req_str;
 	req_str = manager_getstream(ans_stream_type);
 	if (stream_open(&req_str, getRequestName(), O_WRONLY) < 0) {
@@ -62,12 +64,28 @@ int main(int argc, char **argv) {
     //on cree et ouvre le flux de reponse (en dur pour l'instant
     stream_t ans_str = manager_getstream("FIF");
     if (stream_create(&ans_str, ans_name, BUFSIZ-1) < 0) {
-		//ajouter gestion des cas -1 -2
 		raise(SIGTERM);
+	} else {
+		if (stream_open(&ans_str, ans_name, O_RDONLY) < 0) {
+			raise(SIGTERM);
+		}
 	}
-    if (stream_open(&ans_str, ans_name, O_RDONLY) < 0) {
-		//ajouter gestion des cas -1 -2
-		raise(SIGTERM);
+	// On tente de se connecter
+	if (!isDone()) {
+		send(&req_str, "CON", strlen("CON"));
+		struct timeval timeout = {10, 0};
+		stream_set_t sset;
+		stream_set_clear(&sset);
+		stream_set_add(&sset, &ans_str);
+		if (stream_set_select(&sset, &timeout) > 0) {
+			if (stream_read(&ans_str, &ans_buf, BUFSIZ-1) < 0) {
+				fprintf(stderr, "Erreur de reception des donnees\n");
+			}
+		}
+		if ((timeout.tv_sec == 0) && (timeout.tv_usec == 0)) {
+			fprintf(stderr, "Impossible de se connecter au serveur\n");
+			done();
+		}
 	}
 	
 	while (!isDone()) {
@@ -107,7 +125,6 @@ int main(int argc, char **argv) {
 					strncpy(name, res, 3);
 					name[3] = '\0';
 					stream_close(&req_str);
-					stream_unlink(&req_str, getRequestName());
 					req_str = manager_getstream(name);
 					stream_open(&req_str, getRequestName(), O_WRONLY);
 					printf("Changement du mode de requete en %s\n", name);

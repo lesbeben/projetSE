@@ -1,3 +1,18 @@
+/**
+ * Implémente les opérations de gestion des flux.
+ * Membres publiques :
+ *   - manager_init()
+ *   - manager_getstream(const char*)
+ *   - manager_addstream(stream_t*, const char*)
+ *   - manager_removestream(stream_t*)
+ *   - manager_clean()
+ *   - manager_close()
+ * 
+ * Membres privés : 
+ *   - stream_list
+ *   - dl_list
+ */
+  
 #include <unistd.h>
 #include <sys/types.h>
 #include <dirent.h>
@@ -6,6 +21,7 @@
 #include <dlfcn.h>
 
 #include "stream_manager.h"
+#include "error.h"
 
 /*
  * Structure de liste de flux contenant : 
@@ -29,7 +45,6 @@ static stream_list_t stream_list = NULL;
 
 /*
  * Structure des listes de bibliotheques dynamique chargées.
- *   -
  */
 typedef struct DL_LIST {
 	operation_t op;
@@ -40,14 +55,14 @@ typedef struct DL_LIST {
 /*
  * La liste des bibliotheques chargées.
  */
-dl_list_t dl_list = NULL;
+static dl_list_t dl_list = NULL;
 
 void manager_init() {
 	const char* dirname= "plugin/stream/";
 	DIR* dir = opendir(dirname);
 	if (dir == NULL) {
 		perror("opendir");
-		raise(SIGTERM);
+		return;
 	}
 	char name[256 + 14];
 	dl_list_t element = NULL;
@@ -65,7 +80,9 @@ void manager_init() {
 			operation_t (*func)();
 			func = dlsym(hndl, "getop");
 			if (func == NULL) {
-				fprintf(stderr, "%s n'est pas un type de connection valide : %s\n", name, dlerror()); 
+				fprintf(stderr
+						, "%s n'est pas un type de connection valide : %s\n"
+						, name, dlerror()); 
 				dlclose(hndl);
 				ent = readdir(dir);
 				continue;
@@ -121,9 +138,7 @@ void manager_removestream(stream_t* stream) {
 	stream_list_t element = NULL;
 	stream_list_t next = stream_list;
 	while (next != NULL) {
-		if (element != NULL) {
-			prev = element;
-		}
+		prev = element;
 		element = next;
 		next = element->next;
 		if (element->stream == stream) {

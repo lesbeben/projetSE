@@ -25,7 +25,7 @@
 typedef struct {
 	int maxSize;
 	int sizeToRead;
-	char data[0];
+	char data[1];
 } shm_t;
 
 /*
@@ -251,10 +251,6 @@ static int _shm_close(streamd_t* sd) {
 		return -1;
 	}
 	if (data->eventFD != -1) {
-		if (kill(data->eventPID, SIGTERM) == -1) {
-			perror("kill");
-			return -1;
-		}
 		if (close(data->eventFD) == -1) {
 			perror("close");
 			return -1;
@@ -363,18 +359,14 @@ static int _shm_unlink(const char* name) {
     sprintf(realname, "/%s", name);
     sprintf(readSemName, "%sread", realname);
     sprintf(writeSemName, "%swrite", realname);
-    
     if (sem_unlink(readSemName) == -1) {
 		perror("sem_unlink");
-		return -1;
 	}
     if (sem_unlink(writeSemName) == -1) {
 		perror("sem_unlink");
-		return -1;
 	}
 	if (shm_unlink(realname) == -1) {
 		perror("shm_unlink");
-		return -1;
 	}
 	return 0;
 }

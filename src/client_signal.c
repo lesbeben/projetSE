@@ -1,5 +1,5 @@
 /**
- * Implémente les signaux pour la gestion dans le server.
+ * Implémente les signaux pour la gestion dans le client.
  * Membres publiques : 
  *   - done()
  *   - isDone(int)
@@ -33,9 +33,10 @@ int isDone() {
  */
 static void signal_handler(int signum){
 	switch(signum) {
-		case SIGTERM:
 		case SIGQUIT:
 		case SIGINT:
+			kill(0, SIGTERM);
+		case SIGTERM:
 			done();
 			break;
 		case SIGCHLD:

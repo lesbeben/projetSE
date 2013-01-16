@@ -1,3 +1,14 @@
+/**
+ * Implémente les opérations de gestion des requetes pour le server.
+ * Membres publiques : 
+ *   - request_manager_init()
+ *   - get_answer(request_t*, char*, size_t)
+ *   - request_manager_close()
+ * 
+ * Membres privés : 
+ *   - dl_list
+ */
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
@@ -71,15 +82,20 @@ void request_manager_init() {
 }
 
 int get_answer(request_t* req, char* buffer, size_t buffsize) {
-	dl_list_t elmnt = dl_list;
-	while (elmnt != NULL) {
-		if (strncmp(req->cmdname, elmnt->cmd.cmd_name, 3) == 0) {
-			return elmnt->cmd.answer_cmd_func(req, buffer, buffsize);
+	if ((req != NULL) && (buffer != NULL)) {
+		dl_list_t elmnt = dl_list;
+		while (elmnt != NULL) {
+			if (strncmp(req->cmdname, elmnt->cmd.cmd_name, 3) == 0) {
+				return elmnt->cmd.answer_cmd_func(req, buffer, buffsize);
+			}
+			elmnt = elmnt->next;
 		}
-		elmnt = elmnt->next;
+		fprintf(stderr, "Commande %s inconnue\n", req->cmdname);
+		snprintf(buffer, buffsize, "Commande %s inconnue", req->cmdname);
+	}else {
+		snprintf(buffer, buffsize, "Erreur interne du server");
 	}
-	fprintf(stderr, "Commande %s inconnue\n", req->cmdname);
-	snprintf(buffer, buffsize, "Commande %s inconnue", req->cmdname);
+	
 	return -1;
 }
 

@@ -1,3 +1,7 @@
+/**
+ * Définie les structures de données et les opérations 
+ *   des ensembles de flux.
+ */
 #ifndef STREAM_SET_H
 #define STREAM_SET_H
 
@@ -6,6 +10,9 @@
 #include <sys/select.h>
 #include "stream.h"
 
+/**
+ * La structure de données des ensembles de flux.
+ */
 typedef struct {
 	fd_set _set;
 	int _maxfd;

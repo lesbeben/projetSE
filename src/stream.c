@@ -1,3 +1,16 @@
+/**
+ * Implémente les opérations de traitement des flux.
+ * Membres publiques : 
+ *   - stream_create(stream_t*, const char*, size_t)
+ *   - stream_open(stream_t*, const char*, int)
+ *   - stream_close(stream_t*)
+ *   - stream_read(stream_t*, void*, size_t)
+ *   - stream_write(stream_t*, void*, size_t)
+ *   - stream_unlink(stream_t*, const char*)
+ */
+ 
+#include <fcntl.h>
+
 #include "stream.h"
 #include "error.h"
 #include "stream_manager.h"

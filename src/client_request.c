@@ -1,3 +1,7 @@
+/**
+ * Implémente la gestion des requetes pour le client.
+ */
+ 
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
@@ -12,8 +16,8 @@
 #include "client_command.h"
 
 /*
- * Structure des listes de bibliotheques dynamique chargées.
- *   -
+ * Structure des listes de bibliotheques dynamique chargées 
+ *   pour les commnades du client.
  */
 typedef struct DL_LIST {
 	request_cmd_t cmd;
@@ -49,7 +53,9 @@ void request_manager_init() {
 			request_cmd_t (*func)();
 			func = dlsym(hndl, "getCommand");
 			if (func == NULL) {
-				fprintf(stderr, "%s n'est pas un type de requete valide : %s\n", name, dlerror()); 
+				fprintf(stderr
+						, "%s n'est pas un type de requete valide : %s\n"
+						, name, dlerror()); 
 				dlclose(hndl);
 				ent = readdir(dir);
 				continue;
@@ -71,19 +77,28 @@ void request_manager_init() {
 }
 
 request_t* create_request(const char* cmd) {
-	dl_list_t elmnt = dl_list;
-	while (elmnt != NULL) {
-		if (strncmp(cmd, elmnt->cmd.cmd_name, 3) == 0) {
-			return elmnt->cmd.request_cmd_func(cmd);
+	if (cmd != NULL) {
+		dl_list_t elmnt = dl_list;
+		while (elmnt != NULL) {
+			if (strncmp(cmd, elmnt->cmd.cmd_name, 3) == 0) {
+				return elmnt->cmd.request_cmd_func(cmd);
+			}
+			elmnt = elmnt->next;
 		}
-		elmnt = elmnt->next;
+		fprintf(stderr, "Commande %.3s inconnue\n", cmd);		
+	} else {
+		fprintf(stderr, "Impossible de traiter une commande NULL\n");
 	}
-	fprintf(stderr, "Commande %.3s inconnue\n", cmd);
+
 	return NULL;
 }
 
 void delete_request(request_t* req) {
-	free(req);
+	if (req != NULL) {
+		free(req);
+	} else {
+		fprintf(stderr, "Impossible de supprimer une requete NULL\n");
+	}
 }
 
 void request_manager_helpAll() {
@@ -94,9 +109,6 @@ void request_manager_helpAll() {
 	}
 }
 
-/**
- * Affiche l'aide de la commande d'une commande.
- */
 void request_manager_help(const char* cmd) {
 	dl_list_t elmnt = dl_list;
 	while (elmnt != NULL) {

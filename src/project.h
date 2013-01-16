@@ -1,5 +1,5 @@
 /**
- * Définit les données et opérations communes au server et au client.
+ * Définie les données et opérations communes au server et au client.
  */
  
 #ifndef PROJECT_h
@@ -15,8 +15,16 @@
 
 #define STRSIZ 512
 
+/**
+ * Renvoie le nom standard du server.
+ */
 const char* getRequestName();
 
+/**
+ * Renvoie le préfixe du nom standard des flux de réponse.
+ * Le nom d'un flux de réponse sera de la forme : 
+ *   "getAnswerPrefix() + pid du client"
+ */
 const char* getAnswerPrefix();
 
 #endif

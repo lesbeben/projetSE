@@ -1,3 +1,7 @@
+/**
+ * Définie la structure de données d'une requete.
+ */
+
 #ifndef REQUEST_H
 #define REQUEST_H
 
@@ -6,11 +10,10 @@
 #include <unistd.h>
 
 /**
- * Structure représentant une requete
- * la requete contiendra : 
+ * Structure représentant une requete.
+ * La requete contiendra : 
  *   - un entier size représentant la taille totale de la requete
  *   - le pid du client envoyant la requete
- *   - le nom du type de flux à utiliser pour répondre à la requete
  *   - le nom de la commande
  *   - un champs data contenant les données de la commande
  */
