@@ -6,6 +6,6 @@
 #ifndef CHILD_PROCESS_H
 #define CHILD_PROCESS_H
 
-void createChild(int pipe);
+void createChild(int pipe, pid_t clientPid);
 
 #endif

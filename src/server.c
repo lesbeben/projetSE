@@ -7,6 +7,7 @@
 #include "server_request.h"
 #include "signal.h"
 #include "child_list.h"
+#include "child_process.h"
 #include "project.h"
 
 void help(){
@@ -36,23 +37,26 @@ int main(int argc, char **argv) {
 
 	//on cree et ouvre les trois streams et on les ajoute au set
 	for (int i = 0; i < 3; ++i) {
-		if (stream_create(&req_str[i], getRequestName(), BUFSIZ) < 0) { //quelle taille pour le create?
+		if (stream_create(&req_str[i], getRequestName(), BUFSIZ) < 0) {
 			//ajouter gestion des cas -1 -2
 			raise(SIGTERM);
+		} else {
+			if (stream_open(&req_str[i], getRequestName(), O_RDONLY) < 0) { 
+				//ajouter gestion des cas -1 -2
+				raise(SIGTERM);
+			} else {
+				stream_set_add(&sset, &req_str[i]);
+			}
 		}
-		if (stream_open(&req_str[i], getRequestName(), O_RDONLY) < 0) { 
-			//ajouter gestion des cas -1 -2
-			raise(SIGTERM);
-		}
-		stream_set_add(&sset, &req_str[i]);
 	}
 
 	//on lance le serveur
-	while ((stream_set_select(&sset) > 0) && !isDone()) {
-		if (errno == 0) {
+	while (!isDone()) {
+		if (stream_set_select(&sset, NULL) > 0) {
 			//pour tous les types de flux qui sont actifs
 			for (int i = 0; i < 3; ++i) {
 				if ((n = stream_set_isset(&sset, &req_str[i]) > 0)) {
+					printf("i : %d\n", i);
 					//on lit dans le flux
 					if (stream_read(&req_str[i], buffer, BUFSIZ) < 0) { // buff de buffsize
 						raise(SIGTERM);
@@ -75,7 +79,7 @@ int main(int argc, char **argv) {
 								//on ferme l'entree du tube
 								close(tube[1]);
 								// On créé un processus de traitement
-								createChild(tube[0]);
+								createChild(tube[0], clientPid);
 								//on ferme la sortie du tube
 								close(tube[0]);
 								//on ferme le sous-serveur

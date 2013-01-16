@@ -13,7 +13,10 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <signal.h>
+#include <sys/wait.h>
+#include <errno.h>
 #include "signal.h"
+#include "child_list.h"
 
 /*
  * Variable globale permettant de mettre fin au programme.
@@ -31,17 +34,27 @@ int isDone() {
 /*
  * Procdédure de gestion des signaux.
  */
-static void signal_handler(int signum){
+static void signal_handler(int signum) {
+	int r;
+	int olderr = errno;
+	errno = 0;	
 	switch(signum) {
-		case SIGTERM:
 		case SIGQUIT:
+		case SIGINT:
+			kill(0, SIGTERM);
+		case SIGTERM:
 			done();
 			break;
 		case SIGCHLD:
-		
+			do {
+				r = waitpid(-1, NULL, WNOHANG);
+				removeChild(r);
+			} while (r > 0);
+			break;
 		default:
 			break;
 	}
+	errno = 0;
 }
 
 void setSignals() {

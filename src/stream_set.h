@@ -70,6 +70,6 @@ int stream_set_isset(stream_set_t* set, stream_t* stream);
  *   -1 en cas d'erreur d'un appel systeme
  *   -2 en cas d'un argument invalide
  */
-int stream_set_select(stream_set_t* set);
+int stream_set_select(stream_set_t* set, struct timeval* timeout);
 
 #endif

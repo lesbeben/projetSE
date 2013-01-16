@@ -17,7 +17,6 @@
 typedef struct {
 	size_t size;
 	pid_t clientpid;
-	char answer_stream[4];
 	char cmdname[4];
 	char data[1];
 } request_t;

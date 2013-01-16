@@ -39,10 +39,10 @@ int stream_set_isset(stream_set_t* set, stream_t* stream) {
 	return FD_ISSET(stream->op._getfd(&stream->sd), &set->_set);
 }
 
-int stream_set_select(stream_set_t* set) {
+int stream_set_select(stream_set_t* set, struct timeval* timeout) {
 	if (set == NULL) {
 		fprintf(stderr, "stream_set_select : set == NULL\n");
 		return -2;
 	}
-	return select(set->_maxfd + 1, &set->_set, NULL, NULL, NULL);
+	return select(set->_maxfd + 1, &set->_set, NULL, NULL, timeout);
 }

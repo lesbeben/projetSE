@@ -112,6 +112,7 @@ static int _mq_unlink(const char* name) {
     sprintf(realname, "/%s", name);
     
     if (mq_unlink(realname) == -1) {
+		fprintf(stderr, "%s\n", realname);
 		perror("mq_unlink");
 		return -1;
 	}
